@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+{% block title %}Closet - LaundryPro{% endblock %}
+
+{% block content %}
+<div class="header" style="background: linear-gradient(135deg, #A770EF, #CF8BF3, #FDB99B);">
+    <h2>Closet Management</h2>
+    <p>Add, view, and manage your clothes.</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Add New Cloth</h5>
+        <form method="post" action="{{ url_for('closet') }}" class="row g-3" enctype="multipart/form-data">
+            <div class="col-md-4">
+                <label for="name" class="form-label">Cloth Name</label>
+                <input type="text" class="form-control" id="name" name="name" placeholder="e.g., Blue T-Shirt" required>
+            </div>
+            <div class="col-md-3">
+                <label for="category" class="form-label">Category</label>
+                <select class="form-select" id="category" name="category" required>
+                    <option value="">Select Category</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="image" class="form-label">Image</label>
+                <input type="file" class="form-control" id="image" name="image" accept="image/*">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-success w-100"><i class="bi bi-plus-circle"></i> Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Manage Categories & Search</h5>
+         <form method="post" action="{{ url_for('add_category') }}" class="row g-3 mb-3">
+            <div class="col-md-10">
+                <input type="text" class="form-control" name="new_category" placeholder="Add new category..." required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-info w-100">Add Category</button>
+            </div>
+        </form>
+        <hr>
+        <form method="get" action="{{ url_for('closet') }}" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" class="form-control" name="search" placeholder="Search by name..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" name="filter_category">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {% if filter_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="accordion" id="closetAccordion">
+{% for category, clothes in closet_by_category.items() %}
+    {% if clothes %}
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading-{{ category|replace(' ', '-') }}">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ category|replace(' ', '-') }}" aria-expanded="true" aria-controls="collapse-{{ category|replace(' ', '-') }}">
+                {{ category }} ({{ clothes|length }})
+            </button>
+        </h2>
+        <div id="collapse-{{ category|replace(' ', '-') }}" class="accordion-collapse collapse show" aria-labelledby="heading-{{ category|replace(' ', '-') }}" data-bs-parent="#closetAccordion">
+            <div class="accordion-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Last Washed</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cloth in clothes %}
+                            <tr>
+                                <td>
+                                    {% if cloth.image and cloth.image != "None" %}
+                                        <a href="#" data-bs-toggle="modal" data-bs-target="#imageModal" data-img-src="{{ url_for('static', filename=cloth.image) }}">
+                                            <img src="{{ url_for('static', filename=cloth.image) }}" alt="{{ cloth.name }}" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover; cursor: pointer;">
+                                        </a>
+                                    {% endif %}
+                                </td>
+                                <td>{{ cloth.name }}</td>
+                                <td>
+                                    {% if cloth.is_missing %}
+                                        <span class="badge bg-danger">Missing</span>
+                                    {% elif cloth.in_laundry %}
+                                        <span class="badge bg-warning text-dark">In Laundry</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Available</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if cloth.last_washed and cloth.last_washed != "Never" and cloth.last_washed != "None" %}
+                                        {{ cloth.last_washed }}
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('delete_cloth', name=cloth.name, category=category) }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                                        {% if not cloth.is_missing and not cloth.in_laundry %}
+                                            <a href="{{ url_for('mark_missing', name=cloth.name, category=category) }}" class="btn btn-sm btn-outline-warning"><i class="bi bi-question-circle"></i> Mark Missing</a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="imageModalLabel">Image Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img src="" class="img-fluid" id="modalImage" alt="Full size image">
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var imageModal = document.getElementById('imageModal');
+    if (imageModal) {
+        imageModal.addEventListener('show.bs.modal', function (event) {
+            var triggerElement = event.relatedTarget;
+            var imgSrc = triggerElement.getAttribute('data-img-src');
+            var modalImage = imageModal.querySelector('#modalImage');
+            modalImage.src = imgSrc;
+        });
+    }
+});
+</script>
+{% endblock %}

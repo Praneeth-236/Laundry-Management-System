@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard - LaundryPro{% endblock %}
+
+{% block content %}
+<div class="header" style="background: linear-gradient(135deg, #6DD5FA, #2980B9);">
+    <h2>Welcome to Your Dashboard, <span class="fw-bold">{{ session['username'] }}</span>!</h2>
+    <p>Here's a quick overview of your laundry status.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-collection-fill" style="font-size: 3rem; color: #17a2b8;"></i>
+                <h5 class="card-title mt-3">Total Clothes</h5>
+                <h3 class="card-text fw-bold">{{ total_clothes }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-hourglass-split" style="font-size: 3rem; color: #ffc107;"></i>
+                <h5 class="card-title mt-3">In Laundry</h5>
+                <h3 class="card-text fw-bold">{{ in_laundry_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem; color: #dc3545;"></i>
+                <h5 class="card-title mt-3">Missing</h5>
+                <h3 class="card-text fw-bold">{{ missing_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-check-circle-fill" style="font-size: 3rem; color: #28a745;"></i>
+                <h5 class="card-title mt-3">Available</h5>
+                <h3 class="card-text fw-bold">{{ available_count }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
