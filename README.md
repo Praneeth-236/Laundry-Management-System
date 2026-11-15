@@ -117,7 +117,7 @@ Start with the guided path in [Learning Guide](docs/LEARNING_GUIDE.md). It follo
 
 The free demo runs on Render with MongoDB Atlas. It is intended for fictional portfolio data, not real resident data; see [deployment limits and setup](docs/DEPLOYMENT.md) first.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2FPraneeth-236%2FLaundry-Management-System%2Ftree%2Fmain)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2FPraneeth-236%2FLaundry-Management-System%2Ftree%2Fcodex%2Fproduction-readiness)
 
 ## Why MERN, and where the C program went
 

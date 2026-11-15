@@ -19,7 +19,7 @@ This is a $0 demo configuration while both accounts remain on their free tiers. 
 
 ## Deploy on Render
 
-1. After the deployment setup changes are merged into `main`, open the **Deploy to Render** button in the repository README. Render reads `render.yaml` and prepares a free Docker web service named `washday-demo`.
+1. Open the **Deploy to Render** button in the `codex/production-readiness` branch README. It selects that CI-verified branch; Render reads its `render.yaml` and prepares a free Docker web service named `washday-demo`.
 2. Review the service settings and confirm the free plan. Automatic deploys are off in the Blueprint; later code changes won't silently redeploy the demo.
 3. Enter the Atlas URI for the `MONGODB_URI` environment variable. Render generates `SESSION_SECRET` from the blueprint.
 4. Review the resources and click **Apply** (or **Deploy Blueprint**). Wait for `/api/health` to report `status: ok` and `database: connected`.
