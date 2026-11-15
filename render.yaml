@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: washday-demo
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: UPLOAD_DIR
+        value: /tmp/washday-uploads

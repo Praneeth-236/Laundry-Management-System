@@ -1,0 +1,41 @@
+# Compiled executable
+a.exe
+*.exe
+
+# Object files
+*.o
+*.obj
+
+# Python cache
+__pycache__/
+*.pyc
+
+# User-specific data files
+# These are ignored to prevent committing personal user data to the repository.
+# If you want to track a sample, you can add it with 'git add -f <filename>'
+closet_*.txt
+laundry_history_*.txt
+users.txt
+custom_categories.json
+static/uploads/
+static/*.png
+static/*.jpg
+static/*.jpeg
+static/*.gif
+static/*.webp
+
+# Application database and private uploads
+instance/
+*.sqlite3
+
+# Python environments and local environment variables
+.venv/
+venv/
+.env
+
+# VS Code settings folder
+.vscode/
+
+# IDE and OS files
+.DS_Store
+Thumbs.db

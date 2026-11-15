@@ -1,26 +1,37 @@
-# Compiled executable
-a.exe
-*.exe
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
 
-# Object files
-*.o
-*.obj
+# JavaScript dependencies and generated files
+node_modules/
+client/node_modules/
+server/node_modules/
+client/dist/
+server/uploads/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
 
-# Python cache
-__pycache__/
-*.pyc
-
-# User-specific data files
-# These are ignored to prevent committing personal user data to the repository.
-# If you want to track a sample, you can add it with 'git add -f <filename>'
-closet_*.txt
-laundry_history_*.txt
-users.txt
-custom_categories.json
-
-# VS Code settings folder
+# Local MongoDB files and editor state
+data/
 .vscode/
-
-# IDE and OS files
+.idea/
 .DS_Store
 Thumbs.db
+
+# Legacy prototype data may contain private account details and photos
+legacy/flask-prototype/users.txt
+legacy/flask-prototype/closet_*.txt
+legacy/flask-prototype/laundry_history_*.txt
+legacy/flask-prototype/custom_categories.json
+legacy/flask-prototype/instance/
+legacy/flask-prototype/static/*.png
+legacy/flask-prototype/static/*.jpg
+legacy/flask-prototype/static/*.jpeg
+legacy/flask-prototype/static/*.gif
+legacy/flask-prototype/static/*.webp
+
+# C build outputs
+*.exe
+*.o
