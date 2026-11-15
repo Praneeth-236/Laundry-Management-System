@@ -1,9 +1,5 @@
 import mongoose from "mongoose";
 
-function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 function unwrapDocument(result) {
   return result?.value ?? result;
 }
@@ -46,7 +42,7 @@ export class MongoRateLimitStore {
 
       const resetAt = new Date(now.getTime() + this.windowMs);
       try {
-        await this.collection.insertOne({ _id: id, totalHits: 1, resetAt });
+        await this.collection.insertOne({ _id: id, storePrefix: this.prefix, totalHits: 1, resetAt });
         return { totalHits: 1, resetTime: resetAt };
       } catch (error) {
         if (error?.code !== 11000) throw error;
@@ -54,7 +50,7 @@ export class MongoRateLimitStore {
 
       const expired = unwrapDocument(await this.collection.findOneAndUpdate(
         { _id: id, resetAt: { $lte: now } },
-        { $set: { totalHits: 1, resetAt } },
+        { $set: { storePrefix: this.prefix, totalHits: 1, resetAt } },
         { returnDocument: "after", includeResultMetadata: false },
       ));
       if (expired) return { totalHits: 1, resetTime: expired.resetAt };
@@ -84,6 +80,6 @@ export class MongoRateLimitStore {
   }
 
   async resetAll() {
-    await this.collection.deleteMany({ _id: { $regex: `^${escapeRegex(this.prefix)}` } });
+    await this.collection.deleteMany({ storePrefix: this.prefix });
   }
 }
