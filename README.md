@@ -116,6 +116,7 @@ Start with the guided path in [Learning Guide](docs/LEARNING_GUIDE.md). It follo
 - [API Reference](docs/API_REFERENCE.md)
 - [Database and data model](docs/DATABASE.md)
 - [Security decisions and remaining risks](docs/SECURITY.md)
+- [Backup and restore runbook](docs/BACKUP_RESTORE.md)
 - [Interview preparation](docs/INTERVIEW_PREP.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Free demo deployment notes](docs/DEPLOYMENT.md)

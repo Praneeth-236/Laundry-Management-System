@@ -53,6 +53,7 @@ This file describes what the code currently does and the work that remains. It i
 - No malware scanning, account-level audit log, monitoring alert, or incident-response process is configured.
 - `trust proxy` is set to one hop in production. The exact setting must match the deployed network path.
 - Database migration and backup/restore procedures have not been rehearsed.
+- A [backup and restore runbook](BACKUP_RESTORE.md) is documented, but no Atlas snapshot schedule, bucket backup, or restore drill has been configured or verified.
 
 ## Before inviting real users
 
