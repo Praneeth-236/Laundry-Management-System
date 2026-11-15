@@ -1,6 +1,6 @@
 # Free demo deployment
 
-This recipe creates a public portfolio demo. It is not a production service for real residents. [Render says free instances are for previews and hobby projects, not production, and its free web service sleeps after 15 minutes without inbound traffic](https://render.com/docs/free). The local upload directory is ephemeral on this plan, so clothing photos may disappear when the service restarts. The API and database can also be slow to wake up.
+This recipe creates a public portfolio demo. It is not a production service for real residents. [Render says free instances are for previews and hobby projects, not production, and its free web service sleeps after 15 minutes without inbound traffic](https://render.com/docs/free). The default local upload directory is ephemeral on this plan, so photos may disappear when the service restarts. The API and database can also be slow to wake up.
 
 ## Services
 
@@ -25,8 +25,18 @@ This is a $0 demo configuration while both accounts remain on their free tiers. 
 4. Review the resources and click **Apply** (or **Deploy Blueprint**). Wait for `/api/health` to report `status: ok` and `database: connected`.
 5. Open the Render URL, create a fictional demo account, and walk through add item → send to laundry → mark returned.
 
-The free instance's file system is temporary. The blueprint stores uploads under `/tmp/washday-uploads`, so uploaded images can vanish across restarts. Treat this as a known demo limitation. Before using photos with real users, replace local disk storage with private object storage, configure retention/deletion, and test restore behavior.
+The free instance's file system is temporary. With the default `PHOTO_STORAGE_DRIVER=local`, uploads under `/tmp/washday-uploads` can vanish across restarts. For persistent photos, the app supports a private S3-compatible bucket such as [Cloudflare R2](https://developers.cloudflare.com/r2/get-started/s3/). R2 accepts S3 SDK clients and uses an account endpoint with region `auto`.
+
+### Configure private Cloudflare R2 photo storage
+
+1. Create an R2 bucket. Keep public access disabled; Washday streams photos through its authenticated API after checking item ownership.
+2. Create an R2 API token with Object Read & Write permissions scoped to this bucket. Copy its access key, secret key, and the account's S3 endpoint.
+3. In Render, open the web service's environment settings and set `PHOTO_STORAGE_DRIVER=s3`, `S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com`, `S3_REGION=auto`, and `S3_BUCKET=<bucket-name>`.
+4. Add `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` as secret environment variables in Render. Never commit them to `.env.example`, screenshots, or Git.
+5. Save and deploy the service. Sign in with a fictional account, upload a test image, load it from the closet, archive the item, and confirm the image is no longer available. Repeat after a service restart to confirm persistence.
+
+The adapter also removes photos during account deletion on a best-effort basis. A database transaction cannot atomically include a separate object-storage service, so review server logs for cleanup failures and plan an orphan-object reconciliation process before a real-user launch. Back up the bucket and test restore behavior as part of the release checklist.
 
 ## Promote beyond a demo
 
-Use a paid, always-on application host; persistent private object storage; managed MongoDB with authenticated TLS, backups and restore drills; and a reviewed network allowlist. The application now shares login rate-limit counters through MongoDB; monitor that dependency with the authentication path. Add account verification, password recovery, deletion retention policy, expanded integration tests, monitoring, alerting, and privacy/retention terms before inviting real residents. A free-tier deploy is a portfolio preview, not evidence that the app is production-ready.
+Use a paid, always-on application host; configured private object storage; managed MongoDB with authenticated TLS, backups and restore drills; and a reviewed network allowlist. The application now shares login rate-limit counters through MongoDB; monitor that dependency with the authentication path. Add account verification, password recovery, deletion retention policy, monitoring, alerting, and privacy/retention terms before inviting real residents. A free-tier deploy is a portfolio preview, not evidence that the app is production-ready.

@@ -28,7 +28,7 @@ This file describes what the code currently does and the work that remains. It i
 
 - Multer stores one image in memory and limits it to 5 MB. Multipart requests are limited to two text fields, three total parts, and 8 KB per text field.
 - The server checks extension, declared MIME type, and leading file signature.
-- The stored file receives a random server-generated name and is outside the public static directory.
+- The stored file receives a random server-generated name and is outside the public static directory. The S3-compatible adapter does not create public URLs or set public ACLs; operators must keep bucket public access disabled. Photo reads pass through the authenticated, owner-scoped API.
 - Image reads require login and owner-scoped database lookup. The response is marked private and non-cacheable.
 
 ## Operational assumptions
@@ -36,18 +36,18 @@ This file describes what the code currently does and the work that remains. It i
 - Production traffic must use HTTPS. Set `NODE_ENV=production` behind a correctly configured trusted proxy so Secure cookies work.
 - MongoDB must require authentication and TLS in any deployed environment. The local Compose database binds only to loopback and is for development.
 - `SESSION_SECRET` must be a long random secret held in the hosting platform's secret manager.
-- Local photo storage needs a persistent volume on a single server. Do not horizontally scale this setup until photos use private object storage.
+- Local photo storage needs a persistent volume on a single server. For multiple instances or ephemeral hosts, configure the private S3-compatible backend with bucket-scoped credentials. The application never serves bucket URLs directly.
 
 ## Known gaps
 
-- Automated unit tests cover input validation, CSRF checks, and authentication middleware. API integration tests cover registration/session rotation, ownership isolation, private-photo cleanup, upload MIME/signature/size/multipart limits, shared rate-limit counters across store instances, account export/deletion, a laundry cycle, and concurrent requests for the same item; CI runs them against a disposable replica set.
+- Unit tests cover input validation, CSRF/authentication middleware, and local/S3-compatible storage adapter behavior. API integration tests cover registration/session rotation, ownership isolation, authenticated photo streaming and cleanup, upload MIME/signature/size/multipart limits, shared rate-limit counters across store instances, account export/deletion, a laundry cycle, and concurrent requests for the same item; CI runs them against a disposable replica set.
 - Rate-limit counters share the application MongoDB deployment. Keep the `rate_limits` collection on the same protected database and monitor its availability along with authentication.
 - Account export and password-confirmed account deletion are implemented. Deletion revokes all sessions. Recovery, email verification, MFA, and an account deletion retention/audit policy are not implemented.
-- Archiving a clothing item removes its stored photo; its laundry history remains. There is no scheduled orphan-file sweep, general retention policy, or object-storage deletion workflow yet.
+- Archiving a clothing item removes its photo from the configured storage; its laundry history remains. There is no scheduled orphan-object sweep or general retention policy yet. Account deletion attempts object cleanup after its database transaction and logs failures for later operational review.
 - No malware scanning, object-storage policy, structured audit log, monitoring alert, or incident-response process is configured.
 - `trust proxy` is set to one hop in production. The exact setting must match the deployed network path.
 - Database migration and backup/restore procedures have not been rehearsed.
 
 ## Before inviting real users
 
-Run the upload, shared-rate-limit, and concurrency integration cases in CI and review their results. Configure managed MongoDB authentication/TLS, private object storage, backup/restore, account recovery, and an account deletion retention/audit policy. Perform a deployment review. Until then, treat this as a learning application.
+Run the upload, shared-rate-limit, concurrency, and photo-storage adapter cases in CI and review their results. Configure managed MongoDB authentication/TLS, private object storage, backup/restore, account recovery, and an account deletion retention/audit policy. Perform a deployment review. Until then, treat this as a learning application.

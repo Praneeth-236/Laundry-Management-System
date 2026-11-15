@@ -4,7 +4,7 @@ Use this as practice, not a script to memorize. Explain the behavior in your own
 
 ## A 60-90 second project introduction
 
-> I built Washday, a laundry tracker for hostel residents and shared homes. The frontend is React with Vite, and the backend is an Express API on Node. MongoDB stores users, clothing items, laundry events, and sessions through Mongoose. People can organize their clothes, set laundry days, track items through a wash cycle, and report something missing. I focused on ownership checks, server-side sessions, CSRF protection, and transactions so an item status and its laundry history do not get out of sync. I started with a C command-line prototype, then rebuilt the active web app in MERN to learn the full browser-to-database flow. I added unit and API integration checks plus a CI workflow; this is still a learning project, with production operations, account recovery, object storage, and shared-machine booking left to build.
+> I built Washday, a laundry tracker for hostel residents and shared homes. The frontend is React with Vite, and the backend is an Express API on Node. MongoDB stores users, clothing items, laundry events, and sessions through Mongoose. People can organize their clothes, set laundry days, track items through a wash cycle, and report something missing. I focused on ownership checks, server-side sessions, CSRF protection, and transactions so an item status and its laundry history do not get out of sync. I started with a C command-line prototype, then rebuilt the active web app in MERN to learn the full browser-to-database flow. I added a configurable private S3-compatible photo-storage adapter, unit and API integration checks, and a CI workflow. This is still a learning project: production storage, recovery, monitoring, and operational processes must be configured and reviewed before real residents use it.
 
 Say the last sentence honestly. It demonstrates engineering judgment instead of overclaiming production readiness.
 
@@ -118,7 +118,7 @@ Private API queries include the owner ID from the server-side session as well as
 
 **25. How are photo uploads protected?**
 
-The server limits size, checks extension/MIME/signature, generates its own filename, stores files outside the public static directory, and checks account ownership before serving a photo.
+The server limits size, checks extension/MIME/signature, generates its own filename, and checks ownership before serving a photo. It uses local disk in development or a private S3-compatible bucket in a configured deployment; photos are streamed through the authenticated API, not exposed as public bucket links.
 
 **26. How does the login rate limit work across multiple API instances?**
 

@@ -32,7 +32,7 @@ Start with the day-to-day personal laundry workflow that works for a hostel resi
 ## Milestone 3: deploy for real users
 
 - Add email verification, password recovery, account export/deletion, and documented privacy/retention rules.
-- Move photos to private object storage.
+- Configure private object storage in production and rehearse upload, read, archive, account deletion, and backup/restore behavior.
 - Add timezone-aware schedules and optional reminders.
 - Use managed MongoDB with backups, TLS, least-privilege credentials, monitoring, structured logs, and an incident response contact.
 - Run security review and recovery drills before a wider launch.

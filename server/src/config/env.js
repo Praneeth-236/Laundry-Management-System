@@ -12,6 +12,20 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1).default("mongodb://127.0.0.1:27017/laundry?replicaSet=rs0"),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters."),
   UPLOAD_DIR: z.string().default(resolve(projectRoot, "server/uploads")),
+  PHOTO_STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
+  S3_ENDPOINT: z.string().url().optional(),
+  S3_REGION: z.string().default("auto"),
+  S3_BUCKET: z.string().min(1).optional(),
+  S3_ACCESS_KEY_ID: z.string().min(1).optional(),
+  S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+}).superRefine((config, context) => {
+  if (config.PHOTO_STORAGE_DRIVER !== "s3") return;
+  for (const key of ["S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) {
+    if (!config[key]) context.addIssue({ code: "custom", path: [key], message: `${key} is required when PHOTO_STORAGE_DRIVER=s3.` });
+  }
+  if (config.NODE_ENV === "production" && config.S3_ENDPOINT && new URL(config.S3_ENDPOINT).protocol !== "https:") {
+    context.addIssue({ code: "custom", path: ["S3_ENDPOINT"], message: "S3_ENDPOINT must use HTTPS in production." });
+  }
 });
 
 const result = envSchema.safeParse(process.env);

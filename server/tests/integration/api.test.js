@@ -136,6 +136,16 @@ test("archiving a clothing item removes its private photo", async () => {
   assert.ok(photoKey);
   await readFile(join(process.env.UPLOAD_DIR, photoKey));
 
+  const privatePhoto = await fetch(`${baseUrl}/api/clothes/${created.data.item._id}/photo`, { headers: { Cookie: resident.cookie } });
+  assert.equal(privatePhoto.status, 200);
+  assert.equal(privatePhoto.headers.get("content-type"), "image/png");
+  assert.equal(privatePhoto.headers.get("cache-control"), "private, no-store");
+  assert.deepEqual(Buffer.from(await privatePhoto.arrayBuffer()), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+
+  const neighborPhoto = await fetch(`${baseUrl}/api/clothes/${created.data.item._id}/photo`, { headers: { Cookie: neighbor.cookie } });
+  assert.equal(neighborPhoto.status, 404);
+  assert.equal((await neighborPhoto.json()).error.code, "PHOTO_NOT_FOUND");
+
   const archived = await call(resident, "DELETE", `/clothes/${created.data.item._id}`);
   assert.equal(archived.response.status, 200);
   assert.equal(archived.data.item.photoKey, null);
@@ -261,6 +271,15 @@ test("concurrent laundry requests cannot create two active cycles for one item",
 });
 
 test("account data can be exported and account deletion removes owned records", async () => {
+  const accountPhoto = new FormData();
+  accountPhoto.set("name", "Delete account photo test");
+  accountPhoto.set("category", "Shirt");
+  accountPhoto.set("photo", new Blob([Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], { type: "image/png" }), "account.png");
+  const photoItem = await call(resident, "POST", "/clothes", accountPhoto);
+  assert.equal(photoItem.response.status, 201);
+  const accountPhotoKey = photoItem.data.item.photoKey;
+  await readFile(join(process.env.UPLOAD_DIR, accountPhotoKey));
+
   const passwordUpdate = await call(resident, "PATCH", "/profile/password", {
     currentPassword: "washday-passphrase-2026",
     newPassword: "washday-updated-passphrase-2026",
@@ -287,6 +306,7 @@ test("account data can be exported and account deletion removes owned records", 
 
   const deleted = await call(resident, "DELETE", "/profile/account", { currentPassword: "washday-updated-passphrase-2026" });
   assert.equal(deleted.response.status, 204);
+  await assert.rejects(readFile(join(process.env.UPLOAD_DIR, accountPhotoKey)), { code: "ENOENT" });
   const signedOut = await call(resident, "GET", "/auth/me");
   assert.equal(signedOut.data.user, null);
   const revokedSession = await call(residentSecondSession, "GET", "/clothes");

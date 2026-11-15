@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { pipeline } from "node:stream/promises";
 import path from "node:path";
 import { Types } from "mongoose";
-import { env } from "../config/env.js";
+import { photoStorage } from "../services/photoStorage.js";
 import { ClothingItem } from "../models/ClothingItem.js";
 import { User } from "../models/User.js";
 import { HttpError } from "../utils/httpError.js";
@@ -43,8 +43,7 @@ async function savePhoto(file, ownerId) {
     throw new HttpError(400, "Choose a valid WebP image.", "INVALID_IMAGE");
   }
   const key = `${ownerId}-${randomUUID()}${extension}`;
-  await mkdir(env.UPLOAD_DIR, { recursive: true });
-  await writeFile(path.join(env.UPLOAD_DIR, key), file.buffer, { flag: "wx" });
+  await photoStorage.put(key, file.buffer, imageType.mime);
   return key;
 }
 
@@ -72,7 +71,10 @@ export async function createClothing(req, res) {
     const item = await ClothingItem.create({ owner: req.session.userId, name, category, photoKey });
     res.status(201).json({ item });
   } catch (error) {
-    if (photoKey) await rm(path.join(env.UPLOAD_DIR, photoKey), { force: true });
+    if (photoKey) {
+      try { await photoStorage.delete(photoKey); }
+      catch (cleanupError) { console.error("Could not clean up a photo after a failed clothing save.", cleanupError); }
+    }
     if (error?.code === 11000) {
       throw new HttpError(409, "That item already exists in this category.", "DUPLICATE_ITEM");
     }
@@ -110,8 +112,8 @@ export async function archiveClothing(req, res) {
   const photoKey = item.photoKey;
   item.archivedAt = archivedAt;
   item.photoKey = null;
-  if (photoKey && path.basename(photoKey) === photoKey) {
-    try { await rm(path.join(env.UPLOAD_DIR, photoKey), { force: true }); }
+  if (photoKey) {
+    try { await photoStorage.delete(photoKey); }
     catch (error) { console.error("Could not remove archived clothing photo.", error); }
   }
   res.json({ item });
@@ -143,10 +145,19 @@ export async function getPhoto(req, res) {
   const id = objectIdSchema.parse(req.params.itemId);
   const item = await ClothingItem.findOne({ _id: id, owner: req.session.userId }).select("photoKey").lean();
   if (!item?.photoKey) throw new HttpError(404, "Photo not found.", "PHOTO_NOT_FOUND");
+  const photo = await photoStorage.get(item.photoKey);
+  if (!photo) throw new HttpError(404, "Photo not found.", "PHOTO_NOT_FOUND");
   res.setHeader("Cache-Control", "private, no-store");
-  res.sendFile(item.photoKey, { root: env.UPLOAD_DIR }, (error) => {
-    if (error && !res.headersSent) res.status(error.statusCode ?? 404).end();
-  });
+  res.setHeader("Content-Type", photo.contentType);
+  if (photo.contentLength != null) res.setHeader("Content-Length", photo.contentLength);
+  try { await pipeline(photo.body, res); }
+  catch (error) {
+    if (res.destroyed || res.headersSent) {
+      console.error("Could not stream a private clothing photo.", error);
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function dashboardStats(req, res) {
