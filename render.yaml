@@ -3,6 +3,7 @@ services:
     name: washday-demo
     runtime: docker
     plan: free
+    autoDeployTrigger: off
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     envVars:

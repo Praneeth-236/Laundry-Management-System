@@ -48,7 +48,7 @@ All clothing routes require login.
 | GET | `/api/clothes/:itemId/photo` | Stream the private photo after checking ownership |
 | POST | `/api/clothes/:itemId/missing` | Mark an available item missing |
 | POST | `/api/clothes/:itemId/found` | Mark a missing item found |
-| DELETE | `/api/clothes/:itemId` | Archive an item; laundry history remains |
+| DELETE | `/api/clothes/:itemId` | Archive an item, remove its photo, and retain laundry history |
 
 `GET /api/clothes` accepts optional `search` and exact `category` query parameters. Its response includes `{ items, categories }`. Clothing creation fields are `name`, `category`, and optional image file field `photo`. The file limit is 5 MB; accepted formats are PNG, JPEG, GIF, and WebP.
 
@@ -85,8 +85,11 @@ All profile routes require login.
 | --- | --- | --- |
 | PATCH | `/api/profile/schedule` | Replace allowed days with `{ "laundryDays": ["Monday", "Thursday"] }` |
 | PATCH | `/api/profile/password` | Change password with `currentPassword`, `newPassword`, `confirmPassword` |
+| GET | `/api/profile/export` | Download account, clothing, and laundry history as private JSON |
+| DELETE | `/api/profile/account` | Permanently delete account data and photos after confirming `currentPassword` |
 
 An empty `laundryDays` array means laundry cannot be sent on any weekday until the schedule is changed.
+The export is a point-in-time copy and excludes photo contents. Account deletion is irreversible; the server verifies the current password, deletes owned records and all account sessions in a MongoDB transaction, then removes photo files.
 
 ## Health and errors
 

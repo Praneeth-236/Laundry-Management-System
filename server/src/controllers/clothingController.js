@@ -100,12 +100,20 @@ export async function addCategory(req, res) {
 
 export async function archiveClothing(req, res) {
   const id = objectIdSchema.parse(req.params.itemId);
+  const archivedAt = new Date();
   const item = await ClothingItem.findOneAndUpdate(
     { _id: id, owner: req.session.userId, archivedAt: null, status: { $ne: "in_laundry" } },
-    { $set: { archivedAt: new Date() } },
-    { new: true },
+    { $set: { archivedAt, photoKey: null } },
+    { new: false },
   );
   if (!item) throw new HttpError(404, "Item not found or still in laundry.", "ITEM_NOT_AVAILABLE");
+  const photoKey = item.photoKey;
+  item.archivedAt = archivedAt;
+  item.photoKey = null;
+  if (photoKey && path.basename(photoKey) === photoKey) {
+    try { await rm(path.join(env.UPLOAD_DIR, photoKey), { force: true }); }
+    catch (error) { console.error("Could not remove archived clothing photo.", error); }
+  }
   res.json({ item });
 }
 

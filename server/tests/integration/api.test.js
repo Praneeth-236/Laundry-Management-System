@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
-import { rm } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -18,6 +18,7 @@ let baseUrl;
 let server;
 let app;
 let resident;
+let residentSecondSession;
 let neighbor;
 let itemId;
 let laundryEventId;
@@ -75,6 +76,7 @@ before(async () => {
   baseUrl = `http://127.0.0.1:${server.address().port}`;
 
   resident = { cookie: "", csrf: "" };
+  residentSecondSession = { cookie: "", csrf: "" };
   neighbor = { cookie: "", csrf: "" };
 });
 
@@ -123,6 +125,25 @@ test("clothing routes require login and keep inventory owner-scoped", async () =
   assert.equal(crossAccountMutation.response.status, 409);
 });
 
+test("archiving a clothing item removes its private photo", async () => {
+  const form = new FormData();
+  form.set("name", "Archive photo test");
+  form.set("category", "Shirt");
+  form.set("photo", new Blob([Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], { type: "image/png" }), "shirt.png");
+  const created = await call(resident, "POST", "/clothes", form);
+  assert.equal(created.response.status, 201);
+  const photoKey = created.data.item.photoKey;
+  assert.ok(photoKey);
+  await readFile(join(process.env.UPLOAD_DIR, photoKey));
+
+  const archived = await call(resident, "DELETE", `/clothes/${created.data.item._id}`);
+  assert.equal(archived.response.status, 200);
+  assert.equal(archived.data.item.photoKey, null);
+  await assert.rejects(readFile(join(process.env.UPLOAD_DIR, photoKey)), { code: "ENOENT" });
+  const photo = await call(resident, "GET", `/clothes/${created.data.item._id}/photo`);
+  assert.equal(photo.response.status, 404);
+});
+
 test("laundry cycles update item status and history as one workflow", async () => {
   const currentDay = new Intl.DateTimeFormat("en", { weekday: "long" }).format(new Date());
   const schedule = await call(resident, "PATCH", "/profile/schedule", { laundryDays: [currentDay] });
@@ -145,4 +166,40 @@ test("laundry cycles update item status and history as one workflow", async () =
   const closet = await call(resident, "GET", "/clothes");
   assert.equal(closet.data.items.find((item) => item._id === itemId).status, "available");
   assert.ok(closet.data.items.find((item) => item._id === itemId).lastWashedAt);
+});
+
+test("account data can be exported and account deletion removes owned records", async () => {
+  const passwordUpdate = await call(resident, "PATCH", "/profile/password", {
+    currentPassword: "washday-passphrase-2026",
+    newPassword: "washday-updated-passphrase-2026",
+    confirmPassword: "washday-updated-passphrase-2026",
+  });
+  assert.equal(passwordUpdate.response.status, 200);
+  const exportResult = await call(resident, "GET", "/profile/export");
+  assert.equal(exportResult.response.status, 200);
+  assert.equal(exportResult.data.account.username.startsWith("resident_"), true);
+  assert.ok(exportResult.data.items.some((item) => item.name === "Blue shirt"));
+  assert.ok(exportResult.data.laundryEvents.some((event) => event.item === itemId));
+
+  await csrf(residentSecondSession);
+  const secondLogin = await call(residentSecondSession, "POST", "/auth/login", {
+    username: exportResult.data.account.username,
+    password: "washday-updated-passphrase-2026",
+  });
+  assert.equal(secondLogin.response.status, 200);
+  residentSecondSession.csrf = "";
+  await csrf(residentSecondSession);
+
+  const wrongPassword = await call(resident, "DELETE", "/profile/account", { currentPassword: "wrong-password" });
+  assert.equal(wrongPassword.response.status, 400);
+
+  const deleted = await call(resident, "DELETE", "/profile/account", { currentPassword: "washday-updated-passphrase-2026" });
+  assert.equal(deleted.response.status, 204);
+  const signedOut = await call(resident, "GET", "/auth/me");
+  assert.equal(signedOut.data.user, null);
+  const revokedSession = await call(residentSecondSession, "GET", "/clothes");
+  assert.equal(revokedSession.response.status, 401);
+  const neighborItems = await call(neighbor, "GET", "/clothes");
+  assert.equal(neighborItems.response.status, 200);
+  assert.equal(neighborItems.data.items.length, 0);
 });

@@ -185,6 +185,9 @@ input::placeholder { color: #a6b0aa; }
 .missing-card small { color: var(--muted); font-size: 10px; }
 .missing-card .button { margin-left: auto; }
 .preferences-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 15px; }
+.account-data-panel { margin-top: 16px; }
+.delete-account-form { margin-top: 18px; max-width: 420px; }
+.button-danger { background: #a9453d; color: #fff; border: 1px solid #a9453d; }
 .preference-panel { padding: 23px; }
 .preference-panel h2 { margin: 8px 0; font-family: Manrope, sans-serif; font-size: 19px; letter-spacing: -.5px; }
 .preference-panel > p:not(.eyebrow) { margin: 0 0 20px; color: var(--muted); font-size: 11px; line-height: 1.65; }
