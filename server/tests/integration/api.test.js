@@ -89,8 +89,9 @@ after(async () => {
 });
 
 test("registration requires CSRF and rotates the session", async () => {
-  const signedOut = await call(resident, "GET", "/auth/me");
+  const signedOut = await call(resident, "GET", "/auth/me?token=must-not-be-logged");
   assert.equal(signedOut.response.status, 200);
+  assert.match(signedOut.response.headers.get("x-request-id"), /^[0-9a-f-]{36}$/i);
   assert.equal(signedOut.data.user, null);
 
   await csrf(resident);
@@ -100,6 +101,8 @@ test("registration requires CSRF and rotates the session", async () => {
     body: JSON.stringify({ username: "hostel_user", password: "washday-passphrase-2026" }),
   });
   assert.equal(rejected.status, 403);
+  const rejectionBody = await rejected.json();
+  assert.equal(rejectionBody.error.requestId, rejected.headers.get("x-request-id"));
 
   const residentName = `resident_${randomUUID().slice(0, 8)}`;
   const neighborName = `neighbor_${randomUUID().slice(0, 8)}`;

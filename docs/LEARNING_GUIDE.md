@@ -164,6 +164,7 @@ Before calling this production-ready, rehearse database and legacy-data migratio
 | `server/src/controllers/` | Auth, clothing, laundry, profile, and health behavior |
 | `server/src/services/photoStorage*.js` | Stores, reads, and deletes photos on local disk or a private S3-compatible bucket |
 | `server/src/middleware/` | Authentication, CSRF, async error forwarding |
+| `server/src/middleware/requestContext.js` | Request IDs and structured logs that omit query strings and bodies |
 | `server/src/models/` | Mongoose schemas and database indexes |
 | `server/src/services/` | Small reusable domain helpers |
 | `server/src/utils/` | HTTP errors and transaction helper |

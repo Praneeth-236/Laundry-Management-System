@@ -18,6 +18,7 @@ This file describes what the code currently does and the work that remains. It i
 
 - POST, PATCH, and DELETE requests require a random synchronizer CSRF token stored in the server-side session and sent in `X-CSRF-Token`.
 - Helmet installs common security headers; Express's `X-Powered-By` header is disabled.
+- Requests receive an `X-Request-ID` and structured access log with method, path, status, and duration. Query strings, request bodies, and client IPs are not logged. Unexpected errors include the request ID in logs and error responses.
 - Zod validates API input; Mongoose validates persisted document shape.
 - Every private list and mutation scopes its MongoDB query to the user ID from the server-side session. ObjectIds in the URL are not treated as proof of ownership.
 - MongoDB unique indexes enforce case-insensitive clothing duplicates and at most one pending laundry event per item.
@@ -44,7 +45,7 @@ This file describes what the code currently does and the work that remains. It i
 - Rate-limit counters share the application MongoDB deployment. Keep the `rate_limits` collection on the same protected database and monitor its availability along with authentication.
 - Account export and password-confirmed account deletion are implemented. Deletion revokes all sessions. Recovery, email verification, MFA, and an account deletion retention/audit policy are not implemented.
 - Archiving a clothing item removes its photo from the configured storage; its laundry history remains. There is no scheduled orphan-object sweep or general retention policy yet. Account deletion attempts object cleanup after its database transaction and logs failures for later operational review.
-- No malware scanning, object-storage policy, structured audit log, monitoring alert, or incident-response process is configured.
+- No malware scanning, account-level audit log, monitoring alert, or incident-response process is configured.
 - `trust proxy` is set to one hop in production. The exact setting must match the deployed network path.
 - Database migration and backup/restore procedures have not been rehearsed.
 

@@ -10,6 +10,7 @@ import { dashboardStats } from "./controllers/clothingController.js";
 import { requireAuthentication } from "./middleware/authentication.js";
 import { asyncRoute } from "./middleware/asyncRoute.js";
 import { protectAgainstCsrf } from "./middleware/csrf.js";
+import { requestContext } from "./middleware/requestContext.js";
 import { authRoutes } from "./routes/authRoutes.js";
 import { clothingRoutes } from "./routes/clothingRoutes.js";
 import { laundryRoutes } from "./routes/laundryRoutes.js";
@@ -20,6 +21,7 @@ export function createApp() {
   const app = express();
   if (env.isProduction) app.set("trust proxy", 1);
 
+  app.use(requestContext);
   app.disable("x-powered-by");
   app.use(helmet());
   app.use(express.json({ limit: "100kb" }));
@@ -80,9 +82,18 @@ export function createApp() {
     }
 
     const status = Number.isInteger(error?.status) ? error.status : 500;
-    if (status >= 500) console.error(error);
+    if (status >= 500) {
+      console.error(JSON.stringify({
+        level: "error",
+        event: "request_failed",
+        requestId: _req.requestId,
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+      }));
+    }
     const message = status >= 500 ? "Something went wrong. Try again." : error.message;
-    res.status(status).json({ error: { code: error?.code ?? "INTERNAL_ERROR", message } });
+    res.status(status).json({ error: { code: error?.code ?? "INTERNAL_ERROR", message, requestId: _req.requestId } });
   });
 
   return app;
