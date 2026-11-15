@@ -28,6 +28,7 @@ This file describes what the code currently does and the work that remains. It i
 ### Photo handling
 
 - Multer stores one image in memory and limits it to 5 MB. Multipart requests are limited to two text fields, three total parts, and 8 KB per text field.
+- Photo uploads are capped at 30 per account per 24-hour window using the shared MongoDB rate-limit store. Requests without a photo do not use this quota.
 - The server checks extension, declared MIME type, and leading file signature.
 - The stored file receives a random server-generated name and is outside the public static directory. The S3-compatible adapter does not create public URLs or set public ACLs; operators must keep bucket public access disabled. Photo reads pass through the authenticated, owner-scoped API.
 - Image reads require login and owner-scoped database lookup. The response is marked private and non-cacheable.

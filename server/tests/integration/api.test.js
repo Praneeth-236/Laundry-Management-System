@@ -276,6 +276,29 @@ test("concurrent laundry requests cannot create two active cycles for one item",
   assert.equal(returned.response.status, 200);
 });
 
+test("photo uploads are limited per account across the daily window", async () => {
+  const uploader = { cookie: "", csrf: "" };
+  const username = `upload_${randomUUID().slice(0, 8)}`;
+  await register(uploader, username);
+
+  for (let index = 0; index < 31; index += 1) {
+    const form = new FormData();
+    form.set("name", "Daily photo quota item");
+    form.set("category", "Shirt");
+    form.set("photo", new Blob([Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], { type: "image/png" }), `quota-${index}.png`);
+    const result = await call(uploader, "POST", "/clothes", form);
+    if (index === 0) assert.equal(result.response.status, 201);
+    else if (index < 30) assert.equal(result.response.status, 409);
+    else {
+      assert.equal(result.response.status, 429);
+      assert.equal(result.data.error.code, "PHOTO_UPLOAD_LIMIT");
+    }
+  }
+
+  const deleted = await call(uploader, "DELETE", "/profile/account", { currentPassword: "washday-passphrase-2026" });
+  assert.equal(deleted.response.status, 204);
+});
+
 test("account data can be exported and account deletion removes owned records", async () => {
   const accountPhoto = new FormData();
   accountPhoto.set("name", "Delete account photo test");

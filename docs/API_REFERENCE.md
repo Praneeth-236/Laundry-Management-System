@@ -51,7 +51,7 @@ All clothing routes require login.
 | POST | `/api/clothes/:itemId/found` | Mark a missing item found |
 | DELETE | `/api/clothes/:itemId` | Archive an item, remove its photo, and retain laundry history |
 
-`GET /api/clothes` accepts optional `search` and exact `category` query parameters. Its response includes `{ items, categories }`. Clothing creation fields are `name`, `category`, and optional image file field `photo`. The file limit is 5 MB; accepted formats are PNG, JPEG, GIF, and WebP.
+`GET /api/clothes` accepts optional `search` and exact `category` query parameters. Its response includes `{ items, categories }`. Clothing creation fields are `name`, `category`, and optional image file field `photo`. The file limit is 5 MB; accepted formats are PNG, JPEG, GIF, and WebP. Each account can upload up to 30 photos per 24 hours; the API returns `429 PHOTO_UPLOAD_LIMIT` when the quota is reached.
 
 ## Dashboard
 

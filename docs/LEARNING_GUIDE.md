@@ -140,7 +140,7 @@ Transactions require a MongoDB replica set. Docker Compose starts a local single
 
 The closet form sends `multipart/form-data`. Multer keeps one image in memory and limits it to 5 MB. The controller checks extension, declared MIME type, and file signature before saving it under a random server-generated name. The original filename is never used as a path. `server/src/services/photoStorageAdapter.js` isolates local files from S3-compatible object storage; `PHOTO_STORAGE_DRIVER` selects which implementation is used.
 
-Photos are outside the public static directory. `GET /api/clothes/:itemId/photo` first checks ownership, then streams the private object with `Cache-Control: private, no-store`. Local disk is simple for learning; a multi-instance or ephemeral production host should use a private bucket and a retention/deletion policy. The bucket must not allow public access, and the server uses only bucket-scoped credentials.
+Photos are outside the public static directory. `GET /api/clothes/:itemId/photo` first checks ownership, then streams the private object with `Cache-Control: private, no-store`. A shared rate limit caps photo uploads at 30 per account per 24-hour window to control storage abuse. Local disk is simple for learning; a multi-instance or ephemeral production host should use a private bucket and a retention/deletion policy. The bucket must not allow public access, and the server uses only bucket-scoped credentials.
 
 ### 10. Know what still needs work
 
