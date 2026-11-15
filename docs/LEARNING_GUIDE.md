@@ -148,7 +148,7 @@ Photos are outside the public static directory. `GET /api/clothes/:itemId/photo`
 
 ### 10. Know what still needs work
 
-Before calling this production-ready, rehearse database and legacy-data migrations, document backup/restore, configure persistent storage, and deploy to an appropriate host. Shared laundry-machine booking, time zones, reminders, account recovery, and operational response are future work. See [Roadmap](ROADMAP.md), [Security](SECURITY.md), and the [deployment guide](DEPLOYMENT.md).
+Before calling this production-ready, rehearse database and legacy-data migrations, document backup/restore, configure persistent photo storage and SMTP, and deploy to an appropriate host. Account verification and password recovery are implemented, but email delivery must be configured. Shared laundry-machine booking, time zones, reminders, and operational response are future work. See [Roadmap](ROADMAP.md), [Security](SECURITY.md), and the [deployment guide](DEPLOYMENT.md).
 
 ## Folder map
 
