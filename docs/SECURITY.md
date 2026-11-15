@@ -40,7 +40,7 @@ This file describes what the code currently does and the work that remains. It i
 
 ## Known gaps
 
-- Automated unit tests cover input validation, CSRF checks, and authentication middleware. API integration tests cover registration/session rotation, ownership isolation, and one laundry cycle; the CI workflow runs them against a disposable replica set. Continue adding boundary, upload, and concurrent-request cases as features grow.
+- Automated unit tests cover input validation, CSRF checks, and authentication middleware. API integration tests cover registration/session rotation, ownership isolation, private-photo cleanup, account export/deletion, a laundry cycle, and concurrent requests for the same item; CI runs them against a disposable replica set. Continue adding upload boundary cases as features grow.
 - The built-in rate-limit store is in process memory. Use a shared store before running multiple API instances.
 - Account export and password-confirmed account deletion are implemented. Deletion revokes all sessions. Recovery, email verification, MFA, and an account deletion retention/audit policy are not implemented.
 - Archiving a clothing item removes its stored photo; its laundry history remains. There is no scheduled orphan-file sweep, general retention policy, or object-storage deletion workflow yet.
@@ -50,4 +50,4 @@ This file describes what the code currently does and the work that remains. It i
 
 ## Before inviting real users
 
-Expand automated tests for upload edge cases and concurrent laundry actions; run them in CI. Configure managed MongoDB authentication/TLS, a shared rate-limit store, private object storage, backup/restore, account recovery, and an account deletion retention/audit policy. Perform a deployment review. Until then, treat this as a learning application.
+Expand automated tests for upload boundary cases; run them in CI. Configure managed MongoDB authentication/TLS, a shared rate-limit store, private object storage, backup/restore, account recovery, and an account deletion retention/audit policy. Perform a deployment review. Until then, treat this as a learning application.

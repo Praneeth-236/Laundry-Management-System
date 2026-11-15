@@ -15,7 +15,7 @@ Start with the day-to-day personal laundry workflow that works for a hostel resi
 
 ## Milestone 1: interview-quality engineering baseline
 
-- Expand automated coverage with upload validation, session lifecycle edge cases, and concurrent laundry state transitions; keep CI green as those cases are added.
+- Expand automated coverage with upload validation and session lifecycle edge cases; CI already checks concurrent laundry state transitions against a replica set.
 - Add lint/format tooling and CI for install, tests, and production build.
 - Add database migration scripts and rehearse import from old text-file data on a copied sample.
 - Add a seed/demo-data command that only runs in development.

@@ -168,6 +168,25 @@ test("laundry cycles update item status and history as one workflow", async () =
   assert.ok(closet.data.items.find((item) => item._id === itemId).lastWashedAt);
 });
 
+test("concurrent laundry requests cannot create two active cycles for one item", async () => {
+  const created = await call(resident, "POST", "/clothes", { name: "Concurrent request shirt", category: "Shirt" });
+  assert.equal(created.response.status, 201);
+  const concurrentItemId = created.data.item._id;
+  const body = { itemIds: [concurrentItemId] };
+
+  const results = await Promise.all([
+    call(resident, "POST", "/laundry", body),
+    call(resident, "POST", "/laundry", body),
+  ]);
+  assert.deepEqual(results.map(({ response }) => response.status).sort(), [201, 409]);
+
+  const overview = await call(resident, "GET", "/laundry");
+  const activeEvents = overview.data.history.filter((event) => event.item?._id === concurrentItemId && event.status === "pending");
+  assert.equal(activeEvents.length, 1);
+  const returned = await call(resident, "POST", `/laundry/${activeEvents[0]._id}/return`, {});
+  assert.equal(returned.response.status, 200);
+});
+
 test("account data can be exported and account deletion removes owned records", async () => {
   const passwordUpdate = await call(resident, "PATCH", "/profile/password", {
     currentPassword: "washday-passphrase-2026",
