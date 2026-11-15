@@ -95,7 +95,11 @@ Read `AuthPages.jsx`, `AuthContext.jsx`, `api.js`, `csrf.js`, `authRoutes.js`, a
 - `bcryptjs` hashes passwords with a work factor. The original password is not stored.
 - On a successful login, `req.session.regenerate` rotates the session ID, which reduces session-fixation risk.
 - Sessions are stored in MongoDB through `connect-mongo`, not Express's in-memory development store.
-- The login and registration endpoints have an IP-based rate limit.
+- Login and registration share an IP-based limit backed by `MongoRateLimitStore`, not a per-process memory counter.
+
+`server/src/middleware/mongoRateLimitStore.js` implements the `express-rate-limit` store interface. Each client key maps to one MongoDB document containing the hit count and reset time. The store increments active counters with one atomic update, so separate API instances see the same count. When requests initialize or reset a counter at once, the unique `_id` and bounded retry path resolve the race. Expiration checks use `resetAt`; the TTL index created in `database.js` removes old documents later as storage cleanup. MongoDB's TTL monitor is asynchronous, so it does not decide whether a request is over its limit.
+
+The integration test creates two independent stores with the same prefix, sends concurrent increments, and checks shared counts, decrement/reset behavior, prefix isolation, and a new window after expiry.
 
 The password limit is 72 UTF-8 bytes because bcrypt uses that input limit. The client gives the same guidance. Password hashes are selected explicitly only for sign-in and password change, then are never included in the user JSON response.
 

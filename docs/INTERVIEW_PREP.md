@@ -120,27 +120,31 @@ Private API queries include the owner ID from the server-side session as well as
 
 The server limits size, checks extension/MIME/signature, generates its own filename, stores files outside the public static directory, and checks account ownership before serving a photo.
 
-**26. What is still missing before production?**
+**26. How does the login rate limit work across multiple API instances?**
 
-The current unit and API integration suites run in CI. Users can export their account data and permanently delete their account after password confirmation; deletion removes owned records and all account sessions in a MongoDB transaction, then deletes stored photos. I would add upload and concurrency cases, account recovery, time-zone support, shared rate-limit storage, private photo storage/retention, migrations, backup/restore, monitoring, and a deployment/security review before real users.
+`express-rate-limit` delegates counting to a custom MongoDB store. Each IP gets one fixed-window counter document. Atomic `$inc` updates prevent concurrent requests from overwriting each other's counts, and a unique document ID plus retries handle concurrent first requests and expired-window resets. The API checks the counter's reset time itself; a MongoDB TTL index eventually removes old counters. CI tests two independent store instances against the same replica set. This shares state, but authentication still depends on MongoDB availability and should be monitored.
+
+**27. What is still missing before production?**
+
+The current unit and API integration suites run in CI, including upload boundaries, concurrency, and the shared rate-limit store. Users can export their account data and permanently delete their account after password confirmation; deletion removes owned records and all account sessions in a MongoDB transaction, then deletes stored photos. Account recovery, time-zone support, private photo storage/retention, migrations, backup/restore, monitoring, and a deployment/security review remain before real users.
 
 ### Project history and tradeoffs
 
-**27. Why move from C/Flask to MERN?**
+**28. Why move from C/Flask to MERN?**
 
 The C CLI was the original learning prototype. Flask wrapped it as a subprocess with flat-file persistence. I chose MERN for the active rebuild because I wanted to learn modern browser, API, session, and MongoDB transaction patterns and explain a single coherent web stack.
 
-**28. Is the C program still part of the production web path?**
+**29. Is the C program still part of the production web path?**
 
 No. It is preserved as a historical standalone prototype under `legacy/c-prototype/`. The MERN app does not invoke it.
 
-**29. Why are uploads on local disk?**
+**30. Why are uploads on local disk?**
 
 It is simple for local development and a single server. It does not suit multiple ephemeral app instances; object storage is a release requirement before scaling.
 
-**30. How would you scale a hostel version?**
+**31. How would you scale a hostel version?**
 
-Add hostel/workspace membership, machine and reservation models, conflict-safe queue rules, shared rate limiting, object storage, managed MongoDB, and observability. Then test concurrency and fairness explicitly.
+Add hostel/workspace membership, machine and reservation models, conflict-safe queue rules, private object storage, managed MongoDB, and observability. Then test concurrency and fairness explicitly.
 
 ## Code locations to open while answering
 
@@ -149,6 +153,7 @@ Add hostel/workspace membership, machine and reservation models, conflict-safe q
 | React route and layout | `client/src/App.jsx`, `client/src/components/AppShell.jsx` |
 | Browser API and CSRF header | `client/src/api.js`, `server/src/middleware/csrf.js` |
 | Login and sessions | `client/src/context/AuthContext.jsx`, `server/src/controllers/authController.js`, `server/src/app.js` |
+| Shared login rate limit | `server/src/routes/authRoutes.js`, `server/src/middleware/mongoRateLimitStore.js`, `server/src/config/database.js` |
 | Clothing ownership | `server/src/controllers/clothingController.js`, `server/src/models/ClothingItem.js` |
 | Laundry transaction | `server/src/controllers/laundryController.js`, `server/src/utils/transactions.js`, `server/src/models/LaundryEvent.js` |
 | Environment and database | `server/src/config/env.js`, `server/src/config/database.js` |
