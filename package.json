@@ -1,0 +1,22 @@
+{
+  "name": "laundry-management-system",
+  "version": "2.0.0",
+  "private": true,
+  "description": "A hostel-friendly laundry companion built with the MERN stack.",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "engines": {
+    "node": ">=22.12 <23"
+  },
+  "scripts": {
+    "dev:api": "npm run dev --workspace=server",
+    "dev:web": "npm run dev --workspace=client",
+    "db:init": "docker compose exec mongo mongosh --quiet --host localhost:27017 --file /scripts/init-mongo-replica.js",
+    "build": "npm run build --workspace=client",
+    "test": "npm run test --workspace=server",
+    "test:integration": "npm run test:integration --workspace=server",
+    "start": "npm run start --workspace=server"
+  }
+}

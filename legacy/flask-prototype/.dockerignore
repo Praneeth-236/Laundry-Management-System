@@ -1,0 +1,12 @@
+.git
+.venv
+venv
+__pycache__
+*.py[cod]
+.env
+instance
+*.sqlite3
+users.txt
+closet_*.txt
+laundry_history_*.txt
+custom_categories.json
