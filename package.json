@@ -15,7 +15,7 @@
     "dev:web": "npm run dev --workspace=client",
     "db:init": "docker compose exec mongo mongosh --quiet --host localhost:27017 --file /scripts/init-mongo-replica.js",
     "build": "npm run build --workspace=client",
-    "test": "npm run test --workspace=server",
+    "test": "npm run test --workspace=server && npm run test --workspace=client",
     "test:integration": "npm run test:integration --workspace=server",
     "start": "npm run start --workspace=server"
   }
