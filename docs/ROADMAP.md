@@ -17,7 +17,7 @@ Start with the day-to-day personal laundry workflow that works for a hostel resi
 
 - Expand automated coverage with session lifecycle edge cases; CI checks upload validation and concurrent laundry state transitions against a replica set.
 - Add lint/format tooling and CI for install, tests, and production build.
-- Add database migration scripts and rehearse import from old text-file data on a copied sample.
+- Rehearse import from old text-file data on a copied sample; the versioned database migration runner and baseline index migration are now implemented.
 - Configure provider-managed database and object-storage backups and complete a staging restore rehearsal using [the backup runbook](BACKUP_RESTORE.md).
 - Add a seed/demo-data command that only runs in development.
 - Add polished screenshots and a short architecture walkthrough recording; a free-tier live demo is now available with fictional data only.

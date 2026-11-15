@@ -148,7 +148,7 @@ Photos are outside the public static directory. `GET /api/clothes/:itemId/photo`
 
 ### 10. Know what still needs work
 
-Before calling this production-ready, rehearse database and legacy-data migrations, document backup/restore, configure persistent photo storage and SMTP, and deploy to an appropriate host. Account verification and password recovery are implemented, but email delivery must be configured. Shared laundry-machine booking, time zones, reminders, and operational response are future work. See [Roadmap](ROADMAP.md), [Security](SECURITY.md), and the [deployment guide](DEPLOYMENT.md).
+Before calling this production-ready, rehearse the migration runner and legacy-data import on staging, configure provider-managed backups and complete a restore drill, configure persistent photo storage and SMTP, and deploy to an appropriate host. Account verification and password recovery are implemented, but email delivery must be configured. Shared laundry-machine booking, time zones, reminders, and operational response are future work. See [Roadmap](ROADMAP.md), [Security](SECURITY.md), and the [deployment guide](DEPLOYMENT.md).
 
 For a step-by-step operator recovery exercise, see [Backup and restore](BACKUP_RESTORE.md). The runbook describes the steps but has not been executed against the demo providers.
 
@@ -178,6 +178,8 @@ For a step-by-step operator recovery exercise, see [Backup and restore](BACKUP_R
 | `server/src/utils/` | HTTP errors and transaction helper |
 | `docker-compose.yml` | Local MongoDB replica set process |
 | `scripts/init-mongo-replica.js` | Initializes the local replica set once |
+| `server/src/migrations/` and `server/src/utils/migrations.js` | Ordered, recorded schema/data changes and their migration history |
+| `server/scripts/migrate-database.js` | Runs pending database migrations before a release |
 | `legacy/` | Historical C and Flask implementations, not used at runtime |
 
 ## Exercises to prove you understand it

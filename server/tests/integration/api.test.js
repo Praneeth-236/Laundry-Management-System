@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import mongoose from "mongoose";
 
 process.env.NODE_ENV = "test";
 process.env.MONGODB_URI = process.env.TEST_MONGODB_URI || "mongodb://127.0.0.1:27017/laundry_test?replicaSet=rs0";
@@ -113,6 +114,32 @@ test("registration requires CSRF and rotates the session", async () => {
   assert.equal(current.data.user.id, residentUser.id);
 
   await register(neighbor, neighborName);
+});
+
+test("database migrations persist completion and skip applied work", async () => {
+  const { runMigrations } = await import("../../src/utils/migrations.js");
+  const { baselineIndexesMigration } = await import("../../src/migrations/001_baseline_indexes.js");
+  const database = mongoose.connection.db;
+  const history = database.collection("schema_migrations");
+  const baselineWasApplied = Boolean(await history.findOne({ _id: baselineIndexesMigration.id }));
+  const probeId = `999_ci-probe-${randomUUID()}`;
+  const probeCollection = `migration_probe_${randomUUID().replaceAll("-", "")}`;
+  const probeMigration = {
+    id: probeId,
+    up: async (db) => db.collection(probeCollection).insertOne({ applied: true }),
+  };
+  try {
+    const migrations = [baselineIndexesMigration, probeMigration];
+    const firstRun = await runMigrations(database, migrations);
+    const secondRun = await runMigrations(database, migrations);
+    assert.ok(firstRun >= 1 && firstRun <= 2);
+    assert.equal(secondRun, 0);
+    assert.equal(await database.collection(probeCollection).countDocuments(), 1);
+  } finally {
+    await history.deleteOne({ _id: probeId });
+    if (!baselineWasApplied) await history.deleteOne({ _id: baselineIndexesMigration.id });
+    await database.collection(probeCollection).drop().catch(() => {});
+  }
 });
 
 test("recovery email changes require the password and verification depends on SMTP", async () => {

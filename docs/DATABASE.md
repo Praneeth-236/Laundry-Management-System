@@ -86,6 +86,10 @@ Sending an item writes two collections: create a pending event and change the it
 
 MongoDB aggregation groups clothing counts for the dashboard. Laundry history uses `populate` to read item name/category for display.
 
-## Data operations still needed
+## Schema changes and remaining data operations
 
-Mongoose creates indexes at application startup in this project, but there is no versioned schema migration framework yet. Before collecting real user data, add migration scripts for schema evolution and rehearse backup/restore. For a multi-instance deployment, move image files from local disk to private object storage and keep database backups outside the application container.
+Mongoose continues to create required indexes at application startup so a missing index cannot silently weaken a running instance. The versioned migration runner records applied steps in `schema_migrations` and is intended for data/schema changes that need operator-controlled ordering. Its initial `001_baseline-indexes` migration records the existing index setup; it does not import the legacy text files or replace the startup index safety check.
+
+Run one `npm run db:migrate` process at a time, after creating the database and before deploying a release with database changes. The runner applies pending migrations in ascending ID order and records each successful migration. Each migration must be safe to retry if a process stops after changing data but before the history record is written. Keep old migration files in source control so a database's history remains explainable. In `NODE_ENV=production`, add `-- --confirm-production` to the command only after taking a provider backup and confirming the target URI; the app configuration must also pass the `DEPLOYMENT_MODE=production` checks when that mode is selected.
+
+Before collecting real user data, rehearse import from a copied sample of the old text-file data and complete the [backup/restore runbook](BACKUP_RESTORE.md). For a multi-instance deployment, move image files from local disk to private object storage and keep database backups outside the application container.

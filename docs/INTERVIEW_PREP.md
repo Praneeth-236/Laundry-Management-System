@@ -128,25 +128,29 @@ The server limits size, checks extension/MIME/signature, generates its own filen
 
 The account must have a verified email address. The server generates a random token, stores its SHA-256 digest with a 30-minute expiry, and sends the raw token in a URL fragment. The browser posts that token back; the server hashes it and atomically consumes the matching unexpired record. It hashes the new password with bcrypt and removes the account's existing server-side sessions in a MongoDB transaction. The reset request always returns the same status and message so callers are not directly told whether an address is registered. SMTP is optional for local development and must be configured for verification and recovery emails to work.
 
-**28. What is still missing before production?**
+**28. What does the database migration runner do?**
 
-The current unit and API integration suites run in CI, including upload boundaries, concurrency, shared rate limits, and recovery tokens. Users can export their account data and permanently delete their account after password confirmation; deletion removes owned records and all account sessions in a MongoDB transaction, then deletes stored photos. Time-zone support, private photo storage/retention, migrations, backup/restore, monitoring, privacy/retention terms, and a deployment/security review remain before real users.
+`npm run db:migrate` connects to the configured MongoDB database, applies pending migration IDs in ascending order, and records successful steps in `schema_migrations`. The baseline migration records the current index setup. Each future migration must be safe to retry if the process stops after changing data but before recording its ID. The command refuses to run in `NODE_ENV=production` unless I pass `--confirm-production`. The runner exists, but I have not rehearsed importing the old text-file data on a copied sample.
+
+**29. What is still missing before production?**
+
+The current unit and API integration suites run in CI, including upload boundaries, concurrency, shared rate limits, and recovery tokens. Users can export their account data and permanently delete their account after password confirmation; deletion removes owned records and all account sessions in a MongoDB transaction, then deletes stored photos. Time-zone support, legacy-data import rehearsal, provider-managed photo/database backups and restore drills, monitoring, privacy/retention terms, and a deployment/security review remain before real users.
 
 ### Project history and tradeoffs
 
-**29. Why move from C/Flask to MERN?**
+**30. Why move from C/Flask to MERN?**
 
 The C CLI was the original learning prototype. Flask wrapped it as a subprocess with flat-file persistence. I chose MERN for the active rebuild because I wanted to learn modern browser, API, session, and MongoDB transaction patterns and explain a single coherent web stack.
 
-**30. Is the C program still part of the production web path?**
+**31. Is the C program still part of the production web path?**
 
 No. It is preserved as a historical standalone prototype under `legacy/c-prototype/`. The MERN app does not invoke it.
 
-**31. Why are uploads on local disk?**
+**32. Why are uploads on local disk?**
 
 It is simple for local development and a single server. It does not suit multiple ephemeral app instances; object storage is a release requirement before scaling.
 
-**32. How would you scale a hostel version?**
+**33. How would you scale a hostel version?**
 
 Add hostel/workspace membership, machine and reservation models, conflict-safe queue rules, private object storage, managed MongoDB, and observability. Then test concurrency and fairness explicitly.
 
@@ -161,6 +165,7 @@ Add hostel/workspace membership, machine and reservation models, conflict-safe q
 | Clothing ownership | `server/src/controllers/clothingController.js`, `server/src/models/ClothingItem.js` |
 | Laundry transaction | `server/src/controllers/laundryController.js`, `server/src/utils/transactions.js`, `server/src/models/LaundryEvent.js` |
 | Environment and database | `server/src/config/env.js`, `server/src/config/database.js` |
+| Database migrations | `server/src/utils/migrations.js`, `server/src/migrations/`, `server/scripts/migrate-database.js` |
 | MongoDB local setup | `docker-compose.yml`, `scripts/init-mongo-replica.js` |
 
 ## A truthful resume bullet
