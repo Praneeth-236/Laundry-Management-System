@@ -29,4 +29,4 @@ The free instance's file system is temporary. The blueprint stores uploads under
 
 ## Promote beyond a demo
 
-Use a paid, always-on application host; persistent private object storage; managed MongoDB with authenticated TLS, backups and restore drills; a shared rate-limit store; and a reviewed network allowlist. Add account verification, password recovery, data export/deletion, full integration tests, monitoring, alerting, and privacy/retention terms before inviting real residents. A free-tier deploy is a portfolio preview, not evidence that the app is production-ready.
+Use a paid, always-on application host; persistent private object storage; managed MongoDB with authenticated TLS, backups and restore drills; a shared rate-limit store; and a reviewed network allowlist. Add account verification, password recovery, deletion retention policy, expanded integration tests, monitoring, alerting, and privacy/retention terms before inviting real residents. A free-tier deploy is a portfolio preview, not evidence that the app is production-ready.

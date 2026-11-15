@@ -122,7 +122,7 @@ The server limits size, checks extension/MIME/signature, generates its own filen
 
 **26. What is still missing before production?**
 
-The current unit and API integration suites pass in CI. I would add upload and concurrency cases, account recovery, time-zone support, shared rate-limit storage, private photo storage/retention, migrations, backup/restore, monitoring, and a deployment/security review before real users.
+The current unit and API integration suites run in CI. Users can export their account data and permanently delete their account after password confirmation; deletion removes owned records in a MongoDB transaction, deletes stored photos, and destroys the active session. I would add upload and concurrency cases, account recovery, time-zone support, shared rate-limit storage, private photo storage/retention, migrations, backup/restore, monitoring, and a deployment/security review before real users.
 
 ### Project history and tradeoffs
 

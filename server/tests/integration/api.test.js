@@ -146,3 +146,28 @@ test("laundry cycles update item status and history as one workflow", async () =
   assert.equal(closet.data.items.find((item) => item._id === itemId).status, "available");
   assert.ok(closet.data.items.find((item) => item._id === itemId).lastWashedAt);
 });
+
+test("account data can be exported and account deletion removes owned records", async () => {
+  const passwordUpdate = await call(resident, "PATCH", "/profile/password", {
+    currentPassword: "washday-passphrase-2026",
+    newPassword: "washday-updated-passphrase-2026",
+    confirmPassword: "washday-updated-passphrase-2026",
+  });
+  assert.equal(passwordUpdate.response.status, 200);
+  const exportResult = await call(resident, "GET", "/profile/export");
+  assert.equal(exportResult.response.status, 200);
+  assert.equal(exportResult.data.account.username.startsWith("resident_"), true);
+  assert.ok(exportResult.data.items.some((item) => item.name === "Blue shirt"));
+  assert.ok(exportResult.data.laundryEvents.some((event) => event.item === itemId));
+
+  const wrongPassword = await call(resident, "DELETE", "/profile/account", { currentPassword: "wrong-password" });
+  assert.equal(wrongPassword.response.status, 400);
+
+  const deleted = await call(resident, "DELETE", "/profile/account", { currentPassword: "washday-updated-passphrase-2026" });
+  assert.equal(deleted.response.status, 204);
+  const signedOut = await call(resident, "GET", "/auth/me");
+  assert.equal(signedOut.data.user, null);
+  const neighborItems = await call(neighbor, "GET", "/clothes");
+  assert.equal(neighborItems.response.status, 200);
+  assert.equal(neighborItems.data.items.length, 0);
+});

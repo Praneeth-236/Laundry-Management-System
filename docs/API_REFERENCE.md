@@ -85,8 +85,11 @@ All profile routes require login.
 | --- | --- | --- |
 | PATCH | `/api/profile/schedule` | Replace allowed days with `{ "laundryDays": ["Monday", "Thursday"] }` |
 | PATCH | `/api/profile/password` | Change password with `currentPassword`, `newPassword`, `confirmPassword` |
+| GET | `/api/profile/export` | Download account, clothing, and laundry history as private JSON |
+| DELETE | `/api/profile/account` | Permanently delete account data and photos after confirming `currentPassword` |
 
 An empty `laundryDays` array means laundry cannot be sent on any weekday until the schedule is changed.
+The export is a point-in-time copy and includes photo storage keys, not photo contents. Account deletion is irreversible; the server verifies the current password, deletes owned records in a MongoDB transaction, removes photo files, and destroys the current session.
 
 ## Health and errors
 

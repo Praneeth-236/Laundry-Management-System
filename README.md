@@ -4,7 +4,7 @@
 
 Washday helps hostel residents and people in shared homes keep track of their clothes, laundry days, and items still out for a wash. It is a full-stack MERN learning project built around one real workflow: know what you own, send available pieces to laundry, and record what came back.
 
-> **Learning project status:** the active application uses React, Express, Node.js, and MongoDB. The repo also preserves the earlier C and Flask prototypes under `legacy/`. Unit and API integration tests pass in CI. This is not ready for real residents: migration rehearsal, backup/restore, monitoring, persistent photo storage, and account recovery are still outstanding.
+> **Learning project status:** the active application uses React, Express, Node.js, and MongoDB. The repo also preserves the earlier C and Flask prototypes under `legacy/`. Unit and API integration tests run in CI. Signed-in users can export their data and delete their account. This is not ready for real residents: migration rehearsal, backup/restore, monitoring, persistent photo storage, account recovery, and an operational/security review are still outstanding.
 
 ## What you can do
 
