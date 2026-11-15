@@ -23,6 +23,12 @@ jobs:
       - run: docker compose up -d --wait mongo
       - run: npm run db:init
       - run: docker compose exec mongo mongosh --quiet --host localhost:27017 --eval 'for (let i = 0; i < 60; i++) { try { if (rs.status().myState === 1) quit(0); } catch (_) {} sleep(1000); } quit(1);'
+      - name: Apply versioned migrations to the disposable test database
+        run: npm run db:migrate
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://127.0.0.1:27017/laundry_test?replicaSet=rs0
+          SESSION_SECRET: ci-migration-session-secret-0123456789
       - run: npm run test:integration
       - run: npm run build
       - if: always()

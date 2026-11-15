@@ -25,7 +25,18 @@ This is a $0 demo configuration while both accounts remain on their free tiers. 
 4. Review the resources and click **Apply** (or **Deploy Blueprint**). Wait for `/api/health` to report `status: ok` and `database: connected`.
 5. Open the Render URL, create a fictional demo account, and walk through add item → send to laundry → mark returned.
 
+The Render blueprint sets `DEPLOYMENT_MODE=demo` because this free instance uses ephemeral local photo storage and does not have an email provider configured. Before moving a service to real users, set `DEPLOYMENT_MODE=production` only after setting up private S3-compatible photo storage, SMTP, an HTTPS `PUBLIC_APP_URL`, and a MongoDB URI with TLS. Washday validates these requirements at process startup and exits with field-specific errors when one is missing. This catches incomplete production configuration; it does not verify the host's backup policy, bucket access policy, or provider account settings.
+
 The free instance's file system is temporary. With the default `PHOTO_STORAGE_DRIVER=local`, uploads under `/tmp/washday-uploads` can vanish across restarts. For persistent photos, the app supports a private S3-compatible bucket such as [Cloudflare R2](https://developers.cloudflare.com/r2/get-started/s3/). R2 accepts S3 SDK clients and uses an account endpoint with region `auto`.
+
+### Configure email verification and password recovery
+
+1. Choose an SMTP provider and create a sender identity for your Washday domain. Use a provider that supports authenticated TLS.
+2. In Render's environment settings, set `SMTP_HOST`, `SMTP_PORT` (usually `587` with `SMTP_SECURE=false` or `465` with `SMTP_SECURE=true`), `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM` (a bare sender address such as `no-reply@your-domain.example`).
+3. Set `PUBLIC_APP_URL` to the public HTTPS base URL of the app, with no trailing slash.
+4. Save and deploy. Create a fictional account with an inbox you control, follow the verification link, then request a password reset and confirm the new password works.
+
+The demo does not currently have SMTP configured. Until you configure it, email verification and password reset are unavailable, and test accounts cannot recover a forgotten password. Keep SMTP credentials only in Render's secret environment settings.
 
 ### Configure private Cloudflare R2 photo storage
 
@@ -39,4 +50,4 @@ The adapter also removes photos during account deletion on a best-effort basis. 
 
 ## Promote beyond a demo
 
-Use a paid, always-on application host; configured private object storage; managed MongoDB with authenticated TLS, backups and restore drills; and a reviewed network allowlist. The application now shares login rate-limit counters through MongoDB; monitor that dependency with the authentication path. Add account verification, password recovery, deletion retention policy, monitoring, alerting, and privacy/retention terms before inviting real residents. A free-tier deploy is a portfolio preview, not evidence that the app is production-ready.
+Use a paid, always-on application host; configured private object storage and SMTP; managed MongoDB with authenticated TLS, backups and restore drills; and a reviewed network allowlist. The application now shares login rate-limit counters through MongoDB; monitor that dependency with the authentication path. Add deletion retention policy, monitoring, alerting, privacy/retention terms, and an operational/security review before inviting real residents. A free-tier deploy is a portfolio preview, not evidence that the app is production-ready.

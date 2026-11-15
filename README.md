@@ -8,11 +8,14 @@ Washday helps hostel residents and people in shared homes keep track of their cl
 
 The demo uses free hosting and is for fictional data only. It can sleep when idle, and its local-disk photo storage can lose uploads after a restart. See [deployment limits and private storage setup](docs/DEPLOYMENT.md).
 
-> **Learning project status:** the active application uses React, Express, Node.js, and MongoDB. The repo also preserves the earlier C and Flask prototypes under `legacy/`. Unit and API integration tests run in CI. Signed-in users can export their data and delete their account. This is not ready for real residents: migration rehearsal, backup/restore, monitoring, production photo-storage configuration, account recovery, and an operational/security review are still outstanding.
+The Render blueprint explicitly uses `DEPLOYMENT_MODE=demo`. A real deployment must set `DEPLOYMENT_MODE=production`; startup then rejects local photo storage, missing SMTP, non-TLS MongoDB URIs, and non-HTTPS application URLs.
+
+> **Learning project status:** the active application uses React, Express, Node.js, and MongoDB. The repo also preserves the earlier C and Flask prototypes under `legacy/`. Unit and API integration tests run in CI. Signed-in users can verify a recovery email, reset a password when SMTP is configured, export their data, and delete their account. This is not ready for real residents: migration rehearsal, backup/restore, monitoring, production photo-storage and SMTP configuration, retention terms, and an operational/security review are still outstanding.
 
 ## What you can do
 
 - Create an account and manage a private clothing inventory.
+- Verify a recovery email and reset a forgotten password when SMTP delivery is configured.
 - Search and categorize clothing, including custom categories.
 - Upload private clothing photos.
 - Choose your laundry days.
@@ -55,6 +58,7 @@ You need Node.js 22.12 or newer in the 22.x line, npm, and Docker Desktop.
    ```powershell
    docker compose up -d mongo
    npm run db:init
+   npm run db:migrate
    ```
 
    Wait until `localhost:27017` is elected primary. `docker compose exec mongo mongosh --quiet --eval "rs.status().myState"` should print `1`.
@@ -113,6 +117,7 @@ Start with the guided path in [Learning Guide](docs/LEARNING_GUIDE.md). It follo
 - [API Reference](docs/API_REFERENCE.md)
 - [Database and data model](docs/DATABASE.md)
 - [Security decisions and remaining risks](docs/SECURITY.md)
+- [Backup and restore runbook](docs/BACKUP_RESTORE.md)
 - [Interview preparation](docs/INTERVIEW_PREP.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Free demo deployment notes](docs/DEPLOYMENT.md)
@@ -135,5 +140,5 @@ The original C source remains under `legacy/c-prototype/`; the Flask experiment 
 - This release tracks personal items and cycles. Shared machine booking, queues, and hostel administration are next-stage product work.
 - Local disk remains the default for development. The server can use a private S3-compatible bucket for durable photos; configure it before a production deploy and keep object deletion and retention policies enabled.
 - The automated suite covers validation, CSRF, authentication, registration/session rotation, ownership isolation, private photo access and cleanup, local/S3-compatible storage adapters, account export/deletion, a complete laundry return, and concurrent submissions; GitHub Actions runs API integration tests against a disposable MongoDB replica set.
-- There is no release database migration system, automated backup/restore, or monitoring setup yet.
+- A versioned database migration runner is available, but legacy-file import has not been rehearsed. Provider-managed backups/restore and monitoring are not configured yet.
 - No open-source license has been selected.

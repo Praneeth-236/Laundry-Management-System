@@ -2,7 +2,9 @@ import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
 import { HttpError } from "../utils/httpError.js";
 import { userView } from "../services/userView.js";
-import { credentialsSchema } from "../validation/schemas.js";
+import { emailService } from "../services/email.js";
+import { issueRecoveryToken } from "../services/recoveryTokens.js";
+import { credentialsSchema, registrationSchema } from "../validation/schemas.js";
 
 function rotateSession(req, userId) {
   return new Promise((resolve, reject) => {
@@ -15,16 +17,28 @@ function rotateSession(req, userId) {
 }
 
 export async function register(req, res) {
-  const parsed = credentialsSchema.safeParse(req.body);
-  if (!parsed.success) throw new HttpError(400, "Use a 3-20 character username and a password of at least 12 characters.", "INVALID_CREDENTIALS");
-  const { username, password } = parsed.data;
+  const parsed = registrationSchema.safeParse(req.body);
+  if (!parsed.success) throw new HttpError(400, "Enter a valid email, a 3-20 character username, and a password of at least 12 characters.", "INVALID_CREDENTIALS");
+  const { username, password, email } = parsed.data;
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await User.create({
+  const verification = emailService.enabled ? issueRecoveryToken() : null;
+  const user = new User({
     username,
     usernameNormalized: username.toLowerCase(),
     passwordHash,
+    email,
+    emailNormalized: email,
+    ...(verification ? {
+      emailVerificationTokenHash: verification.hash,
+      emailVerificationExpiresAt: verification.expiresAt,
+    } : {}),
   });
+  await user.save();
   await rotateSession(req, user._id);
+  if (verification) {
+    try { await emailService.sendVerification({ email, username, token: verification.token }); }
+    catch (error) { console.error("Could not send the registration verification email.", error); }
+  }
   res.status(201).json({ user: userView(user) });
 }
 

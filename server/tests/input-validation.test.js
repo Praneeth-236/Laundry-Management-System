@@ -6,6 +6,9 @@ import {
   credentialsSchema,
   objectIdSchema,
   passwordChangeSchema,
+  passwordResetSchema,
+  registrationSchema,
+  emailVerificationTokenSchema,
   scheduleSchema,
   sendLaundrySchema,
 } from "../src/validation/schemas.js";
@@ -46,4 +49,24 @@ test("password changes require confirmation to match", () => {
   const body = { currentPassword: "old password", newPassword: "new password long", confirmPassword: "new password long" };
   assert.equal(passwordChangeSchema.safeParse(body).success, true);
   assert.equal(passwordChangeSchema.safeParse({ ...body, confirmPassword: "different password" }).success, false);
+});
+
+test("registration normalizes and validates a recovery email address", () => {
+  const result = registrationSchema.safeParse({
+    username: "sam_1",
+    password: "correct horse battery",
+    email: " SAM@Example.Test ",
+  });
+  assert.equal(result.success, true);
+  assert.equal(result.data.email, "sam@example.test");
+  assert.equal(registrationSchema.safeParse({ username: "sam_1", password: "correct horse battery" }).success, false);
+  assert.equal(registrationSchema.safeParse({ username: "sam_1", password: "correct horse battery", email: "bad" }).success, false);
+});
+
+test("verification and password reset tokens are strict and reset passwords must match", () => {
+  const token = "a".repeat(43);
+  assert.equal(emailVerificationTokenSchema.safeParse({ token }).success, true);
+  assert.equal(emailVerificationTokenSchema.safeParse({ token, extra: true }).success, false);
+  assert.equal(passwordResetSchema.safeParse({ token, newPassword: "new long passphrase", confirmPassword: "new long passphrase" }).success, true);
+  assert.equal(passwordResetSchema.safeParse({ token, newPassword: "new long passphrase", confirmPassword: "different passphrase" }).success, false);
 });

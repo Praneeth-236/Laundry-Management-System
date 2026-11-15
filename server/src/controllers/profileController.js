@@ -2,12 +2,14 @@ import bcrypt from "bcryptjs";
 import path from "node:path";
 import { env } from "../config/env.js";
 import { photoStorage } from "../services/photoStorage.js";
+import { emailService } from "../services/email.js";
+import { hashRecoveryToken, issueRecoveryToken } from "../services/recoveryTokens.js";
 import { User } from "../models/User.js";
 import { ClothingItem } from "../models/ClothingItem.js";
 import { LaundryEvent } from "../models/LaundryEvent.js";
 import { HttpError } from "../utils/httpError.js";
 import { userView } from "../services/userView.js";
-import { currentPasswordSchema, passwordChangeSchema, scheduleSchema } from "../validation/schemas.js";
+import { currentPasswordSchema, passwordChangeSchema, recoveryEmailUpdateSchema, scheduleSchema } from "../validation/schemas.js";
 
 export async function updateSchedule(req, res) {
   const parsed = scheduleSchema.safeParse(req.body);
@@ -35,8 +37,54 @@ export async function changePassword(req, res) {
   res.json({ message: "Password updated." });
 }
 
+export async function updateRecoveryEmail(req, res) {
+  const parsed = recoveryEmailUpdateSchema.safeParse(req.body);
+  if (!parsed.success) throw new HttpError(400, "Enter a valid email and your current password.", "INVALID_EMAIL");
+  const user = await User.findById(req.session.userId).select("+passwordHash");
+  if (!user) throw new HttpError(404, "Account not found.", "USER_NOT_FOUND");
+  if (!await bcrypt.compare(parsed.data.currentPassword, user.passwordHash)) {
+    throw new HttpError(400, "Current password is incorrect.", "INVALID_CURRENT_PASSWORD");
+  }
+  if (user.email?.toLowerCase() === parsed.data.email && user.emailVerifiedAt) {
+    return res.json({ message: "That recovery email is already verified.", user: userView(user) });
+  }
+
+  const verification = issueRecoveryToken();
+  user.email = parsed.data.email;
+  user.emailNormalized = parsed.data.email;
+  user.emailVerifiedAt = null;
+  user.passwordResetTokenHash = undefined;
+  user.passwordResetExpiresAt = undefined;
+  if (emailService.enabled) {
+    user.emailVerificationTokenHash = verification.hash;
+    user.emailVerificationExpiresAt = verification.expiresAt;
+  } else {
+    user.emailVerificationTokenHash = undefined;
+    user.emailVerificationExpiresAt = undefined;
+  }
+  try { await user.save(); }
+  catch (error) {
+    if (error?.code === 11000) throw new HttpError(409, "That email address is already linked to another account.", "EMAIL_IN_USE");
+    throw error;
+  }
+
+  if (!emailService.enabled) {
+    return res.json({ message: "Email saved. Email delivery is not configured, so it cannot be verified yet.", user: userView(user) });
+  }
+  try { await emailService.sendVerification({ email: user.email, username: user.username, token: verification.token }); }
+  catch (error) {
+    await User.updateOne(
+      { _id: user._id, emailVerificationTokenHash: hashRecoveryToken(verification.token) },
+      { $unset: { emailVerificationTokenHash: 1, emailVerificationExpiresAt: 1 } },
+    );
+    console.error("Could not send an email verification message after an address change.", error);
+    return res.json({ message: "Email saved, but the verification message could not be sent. Try again from this page.", user: userView(user) });
+  }
+  res.json({ message: "Recovery email saved. Verification link sent; it expires in 30 minutes.", user: userView(user) });
+}
+
 export async function exportAccount(req, res) {
-  const user = await User.findById(req.session.userId).select("username laundryDays categories createdAt").lean();
+  const user = await User.findById(req.session.userId).select("username email emailVerifiedAt laundryDays categories createdAt").lean();
   if (!user) throw new HttpError(404, "Account not found.", "USER_NOT_FOUND");
   const [items, events] = await Promise.all([
     ClothingItem.find({ owner: user._id }).select("name category status lostAt lastWashedAt archivedAt createdAt updatedAt").lean(),

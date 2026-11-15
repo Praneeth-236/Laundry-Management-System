@@ -41,7 +41,7 @@ Start with `client/src/App.jsx`. React Router decides which page is shown. `Prot
 Then look at the page files:
 
 - `LandingPage.jsx` is public product information.
-- `AuthPages.jsx` handles sign-in and account creation.
+- `AuthPages.jsx` handles sign-in and account creation; `RecoveryPages.jsx` redeems one-time email verification and password-reset links.
 - `DashboardPage.jsx` displays counts.
 - `ClosetPage.jsx` adds, searches, and organizes clothing.
 - `LaundryPage.jsx` selects pieces, submits a cycle, and records returns or losses.
@@ -100,6 +100,10 @@ Read `AuthPages.jsx`, `AuthContext.jsx`, `api.js`, `csrf.js`, `authRoutes.js`, a
 - Sessions are stored in MongoDB through `connect-mongo`, not Express's in-memory development store.
 - Login and registration share an IP-based limit backed by `MongoRateLimitStore`, not a per-process memory counter.
 
+Account creation also collects a recovery email. `recoveryController.js` issues random 32-byte tokens, stores only their SHA-256 digests, and consumes them with an atomic MongoDB update. `emailService.js` sends links through SMTP; the token appears after `#` in the URL, which browsers keep out of the HTTP request. Password reset changes the bcrypt hash and deletes the account's server-side sessions in the same transaction. Password-reset requests use a generic response so the API does not directly reveal whether an address is registered. Without SMTP configuration, email verification and reset endpoints report that delivery is unavailable; local and demo accounts can still use the rest of Washday.
+
+**Interview check:** Why store a hash of the reset token instead of the token itself? The email needs the original token, but a database read should not be enough to redeem it. The API hashes the presented token and looks up that digest. A short expiry and atomic consume make a captured link time-limited and one-use.
+
 `server/src/middleware/mongoRateLimitStore.js` implements the `express-rate-limit` store interface. Each client key maps to one MongoDB document containing the hit count and reset time. The document ID uses an HMAC digest keyed by `SESSION_SECRET`, so raw IP values are not stored. The store increments active counters with one atomic update, so separate API instances see the same count. When requests initialize or reset a counter at once, the unique `_id` and bounded retry path resolve the race. Expiration checks use `resetAt`; the TTL index created in `database.js` removes old documents later as storage cleanup. MongoDB's TTL monitor is asynchronous, so it does not decide whether a request is over its limit.
 
 The integration test creates two independent stores with the same prefix, sends concurrent increments, and checks shared counts, decrement/reset behavior, prefix isolation, and a new window after expiry.
@@ -110,7 +114,7 @@ The password limit is 72 UTF-8 bytes because bcrypt uses that input limit. The c
 
 Read `server/src/models/User.js`, `ClothingItem.js`, and `LaundryEvent.js`, then open [Database and data model](DATABASE.md).
 
-- `User` owns a username, password hash, chosen laundry days, and custom categories.
+- `User` owns a username, password hash, optional recovery email and verification state, chosen laundry days, and custom categories.
 - `ClothingItem` belongs to one owner and has a status: available, in laundry, or missing.
 - `LaundryEvent` belongs to an owner and clothing item and records sent, returned, or missing state.
 
@@ -144,7 +148,11 @@ Photos are outside the public static directory. `GET /api/clothes/:itemId/photo`
 
 ### 10. Know what still needs work
 
-Before calling this production-ready, rehearse database and legacy-data migrations, document backup/restore, configure persistent storage, and deploy to an appropriate host. Shared laundry-machine booking, time zones, reminders, account recovery, and operational response are future work. See [Roadmap](ROADMAP.md), [Security](SECURITY.md), and the [deployment guide](DEPLOYMENT.md).
+Before calling this production-ready, rehearse the migration runner and legacy-data import on staging, configure provider-managed backups and complete a restore drill, configure persistent photo storage and SMTP, and deploy to an appropriate host. Account verification and password recovery are implemented, but email delivery must be configured. Shared laundry-machine booking, time zones, reminders, and operational response are future work. See [Roadmap](ROADMAP.md), [Security](SECURITY.md), and the [deployment guide](DEPLOYMENT.md).
+
+For a step-by-step operator recovery exercise, see [Backup and restore](BACKUP_RESTORE.md). The runbook describes the steps but has not been executed against the demo providers.
+
+`DEPLOYMENT_MODE=production` is an explicit release guard in `server/src/config/env.js`. The regular Render preview uses `demo` so it can run without SMTP or durable object storage. Production mode checks the required integrations before the HTTP server starts; it cannot confirm provider-side backups, permissions, or monitoring.
 
 ## Folder map
 
@@ -170,6 +178,8 @@ Before calling this production-ready, rehearse database and legacy-data migratio
 | `server/src/utils/` | HTTP errors and transaction helper |
 | `docker-compose.yml` | Local MongoDB replica set process |
 | `scripts/init-mongo-replica.js` | Initializes the local replica set once |
+| `server/src/migrations/` and `server/src/utils/migrations.js` | Ordered, recorded schema/data changes and their migration history |
+| `server/scripts/migrate-database.js` | Runs pending database migrations before a release |
 | `legacy/` | Historical C and Flask implementations, not used at runtime |
 
 ## Exercises to prove you understand it
@@ -185,4 +195,4 @@ Answer keys and question prompts are in [Interview Preparation](INTERVIEW_PREP.m
 
 ## Automated checks
 
-`npm test` runs the fast unit suite. Read `server/tests/input-validation.test.js` for validation cases, `server/tests/security-middleware.test.js` for CSRF/authentication behavior, and `server/tests/photo-storage.test.js` for the local and S3-compatible adapters. `npm run test:integration` exercises the real Express API with MongoDB, including session rotation, owner-scoped inventory and photo reads, photo cleanup, and a complete laundry return. It needs the local replica set from the setup steps and only writes to the isolated `laundry_test` database. GitHub Actions runs both suites against MongoDB before building the frontend.
+`npm test` runs the fast unit suite. Read `server/tests/input-validation.test.js` for validation cases, `server/tests/security-middleware.test.js` for CSRF/authentication behavior, `server/tests/photo-storage.test.js` for the local and S3-compatible adapters, and `server/tests/migrations.test.js` for migration ordering and safety. `npm run test:integration` exercises the real Express API with MongoDB, including session rotation, owner-scoped inventory and photo reads, photo cleanup, a complete laundry return, and migration tracking. It needs the local replica set from the setup steps and only writes to the isolated `laundry_test` database. GitHub Actions runs the migration command and both suites against a disposable MongoDB replica set before building the frontend.

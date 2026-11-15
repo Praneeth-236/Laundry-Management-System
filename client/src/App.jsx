@@ -7,6 +7,7 @@ import { LaundryPage } from "./pages/LaundryPage.jsx";
 import { MissingPage } from "./pages/MissingPage.jsx";
 import { ProfilePage } from "./pages/ProfilePage.jsx";
 import { LoginPage, SignupPage } from "./pages/AuthPages.jsx";
+import { ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from "./pages/RecoveryPages.jsx";
 import { LandingPage } from "./pages/LandingPage.jsx";
 
 function NotFoundPage() {
@@ -19,6 +20,9 @@ export function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route path="/dashboard" element={<DashboardPage />} />
