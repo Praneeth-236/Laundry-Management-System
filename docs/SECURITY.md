@@ -42,7 +42,7 @@ This file describes what the code currently does and the work that remains. It i
 
 - Automated unit tests cover input validation, CSRF checks, and authentication middleware. API integration tests cover registration/session rotation, ownership isolation, and one laundry cycle; the CI workflow runs them against a disposable replica set. Continue adding boundary, upload, and concurrent-request cases as features grow.
 - The built-in rate-limit store is in process memory. Use a shared store before running multiple API instances.
-- Account export and password-confirmed account deletion are implemented. Recovery, email verification, MFA, revocation of all other sessions, and an account deletion retention/audit policy are not implemented.
+- Account export and password-confirmed account deletion are implemented. Deletion revokes all sessions. Recovery, email verification, MFA, and an account deletion retention/audit policy are not implemented.
 - Photo cleanup and retention rules are not implemented. Archiving a clothing item retains its photo and laundry history.
 - No malware scanning, object-storage policy, structured audit log, monitoring alert, or incident-response process is configured.
 - `trust proxy` is set to one hop in production. The exact setting must match the deployed network path.

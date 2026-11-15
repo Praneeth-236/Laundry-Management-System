@@ -63,6 +63,9 @@ export async function deleteAccount(req, res) {
     await mongoSession.withTransaction(async () => {
       await LaundryEvent.deleteMany({ owner: user._id }, { session: mongoSession });
       await ClothingItem.deleteMany({ owner: user._id }, { session: mongoSession });
+      await User.db.collection("sessions").deleteMany({
+        session: { $regex: `\"userId\":\"${user._id.toString()}\"` },
+      }, { session: mongoSession });
       await User.deleteOne({ _id: user._id }, { session: mongoSession });
     });
   } finally {

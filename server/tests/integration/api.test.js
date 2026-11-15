@@ -18,6 +18,7 @@ let baseUrl;
 let server;
 let app;
 let resident;
+let residentSecondSession;
 let neighbor;
 let itemId;
 let laundryEventId;
@@ -75,6 +76,7 @@ before(async () => {
   baseUrl = `http://127.0.0.1:${server.address().port}`;
 
   resident = { cookie: "", csrf: "" };
+  residentSecondSession = { cookie: "", csrf: "" };
   neighbor = { cookie: "", csrf: "" };
 });
 
@@ -160,6 +162,15 @@ test("account data can be exported and account deletion removes owned records", 
   assert.ok(exportResult.data.items.some((item) => item.name === "Blue shirt"));
   assert.ok(exportResult.data.laundryEvents.some((event) => event.item === itemId));
 
+  await csrf(residentSecondSession);
+  const secondLogin = await call(residentSecondSession, "POST", "/auth/login", {
+    username: exportResult.data.account.username,
+    password: "washday-updated-passphrase-2026",
+  });
+  assert.equal(secondLogin.response.status, 200);
+  residentSecondSession.csrf = "";
+  await csrf(residentSecondSession);
+
   const wrongPassword = await call(resident, "DELETE", "/profile/account", { currentPassword: "wrong-password" });
   assert.equal(wrongPassword.response.status, 400);
 
@@ -167,6 +178,8 @@ test("account data can be exported and account deletion removes owned records", 
   assert.equal(deleted.response.status, 204);
   const signedOut = await call(resident, "GET", "/auth/me");
   assert.equal(signedOut.data.user, null);
+  const revokedSession = await call(residentSecondSession, "GET", "/clothes");
+  assert.equal(revokedSession.response.status, 401);
   const neighborItems = await call(neighbor, "GET", "/clothes");
   assert.equal(neighborItems.response.status, 200);
   assert.equal(neighborItems.data.items.length, 0);
