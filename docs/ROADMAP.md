@@ -19,7 +19,7 @@ Start with the day-to-day personal laundry workflow that works for a hostel resi
 - Add lint/format tooling and CI for install, tests, and production build.
 - Add database migration scripts and rehearse import from old text-file data on a copied sample.
 - Add a seed/demo-data command that only runs in development.
-- Add screenshots, a live demo, and a short architecture walkthrough recording.
+- Add polished screenshots and a short architecture walkthrough recording; a free-tier live demo is now available with fictional data only.
 
 ## Milestone 2: make one-hostel shared laundry useful
 

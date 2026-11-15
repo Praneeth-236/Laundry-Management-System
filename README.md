@@ -4,6 +4,10 @@
 
 Washday helps hostel residents and people in shared homes keep track of their clothes, laundry days, and items still out for a wash. It is a full-stack MERN learning project built around one real workflow: know what you own, send available pieces to laundry, and record what came back.
 
+**Live demo:** [washday-demo.onrender.com](https://washday-demo.onrender.com/) · [API health](https://washday-demo.onrender.com/api/health)
+
+The demo uses free hosting and is for fictional data only. It can sleep when idle, and uploaded photos can disappear after a restart. See [deployment limits](docs/DEPLOYMENT.md).
+
 > **Learning project status:** the active application uses React, Express, Node.js, and MongoDB. The repo also preserves the earlier C and Flask prototypes under `legacy/`. Unit and API integration tests run in CI. Signed-in users can export their data and delete their account. This is not ready for real residents: migration rehearsal, backup/restore, monitoring, persistent photo storage, account recovery, and an operational/security review are still outstanding.
 
 ## What you can do
@@ -130,6 +134,6 @@ The original C source remains under `legacy/c-prototype/`; the Flask experiment 
 - Laundry days use the server's local time zone; personal time-zone settings and reminders are not implemented.
 - This release tracks personal items and cycles. Shared machine booking, queues, and hostel administration are next-stage product work.
 - Uploaded images use local disk. A multi-instance deployment needs object storage and a retention policy.
-- The automated suite covers validation, CSRF, authentication, registration/session rotation, ownership isolation, and a laundry return. Add upload and concurrency cases, and require a green CI run before calling this production-ready.
+- The automated suite covers validation, CSRF, authentication, registration/session rotation, ownership isolation, photo upload/archive cleanup, account export/deletion, a complete laundry return, and concurrent submissions; the GitHub Actions workflow runs integration tests against a disposable MongoDB replica set.
 - There is no release database migration system, automated backup/restore, or monitoring setup yet.
 - No open-source license has been selected.
