@@ -31,7 +31,7 @@ Start with the day-to-day personal laundry workflow that works for a hostel resi
 
 ## Milestone 3: deploy for real users
 
-- Add email verification, password recovery, account export/deletion, and documented privacy/retention rules.
+- Configure SMTP for email verification and password recovery; account export/deletion are implemented, with privacy/retention terms still to be written.
 - Configure private object storage in production and rehearse upload, read, archive, account deletion, and backup/restore behavior.
 - Add timezone-aware schedules and optional reminders.
 - Use managed MongoDB with backups, TLS, least-privilege credentials, monitoring, structured logs, and an incident response contact.

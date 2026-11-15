@@ -41,7 +41,7 @@ Start with `client/src/App.jsx`. React Router decides which page is shown. `Prot
 Then look at the page files:
 
 - `LandingPage.jsx` is public product information.
-- `AuthPages.jsx` handles sign-in and account creation.
+- `AuthPages.jsx` handles sign-in and account creation; `RecoveryPages.jsx` redeems one-time email verification and password-reset links.
 - `DashboardPage.jsx` displays counts.
 - `ClosetPage.jsx` adds, searches, and organizes clothing.
 - `LaundryPage.jsx` selects pieces, submits a cycle, and records returns or losses.
@@ -100,6 +100,10 @@ Read `AuthPages.jsx`, `AuthContext.jsx`, `api.js`, `csrf.js`, `authRoutes.js`, a
 - Sessions are stored in MongoDB through `connect-mongo`, not Express's in-memory development store.
 - Login and registration share an IP-based limit backed by `MongoRateLimitStore`, not a per-process memory counter.
 
+Account creation also collects a recovery email. `recoveryController.js` issues random 32-byte tokens, stores only their SHA-256 digests, and consumes them with an atomic MongoDB update. `emailService.js` sends links through SMTP; the token appears after `#` in the URL, which browsers keep out of the HTTP request. Password reset changes the bcrypt hash and deletes the account's server-side sessions in the same transaction. Password-reset requests use a generic response so the API does not directly reveal whether an address is registered. Without SMTP configuration, email verification and reset endpoints report that delivery is unavailable; local and demo accounts can still use the rest of Washday.
+
+**Interview check:** Why store a hash of the reset token instead of the token itself? The email needs the original token, but a database read should not be enough to redeem it. The API hashes the presented token and looks up that digest. A short expiry and atomic consume make a captured link time-limited and one-use.
+
 `server/src/middleware/mongoRateLimitStore.js` implements the `express-rate-limit` store interface. Each client key maps to one MongoDB document containing the hit count and reset time. The document ID uses an HMAC digest keyed by `SESSION_SECRET`, so raw IP values are not stored. The store increments active counters with one atomic update, so separate API instances see the same count. When requests initialize or reset a counter at once, the unique `_id` and bounded retry path resolve the race. Expiration checks use `resetAt`; the TTL index created in `database.js` removes old documents later as storage cleanup. MongoDB's TTL monitor is asynchronous, so it does not decide whether a request is over its limit.
 
 The integration test creates two independent stores with the same prefix, sends concurrent increments, and checks shared counts, decrement/reset behavior, prefix isolation, and a new window after expiry.
@@ -110,7 +114,7 @@ The password limit is 72 UTF-8 bytes because bcrypt uses that input limit. The c
 
 Read `server/src/models/User.js`, `ClothingItem.js`, and `LaundryEvent.js`, then open [Database and data model](DATABASE.md).
 
-- `User` owns a username, password hash, chosen laundry days, and custom categories.
+- `User` owns a username, password hash, optional recovery email and verification state, chosen laundry days, and custom categories.
 - `ClothingItem` belongs to one owner and has a status: available, in laundry, or missing.
 - `LaundryEvent` belongs to an owner and clothing item and records sent, returned, or missing state.
 

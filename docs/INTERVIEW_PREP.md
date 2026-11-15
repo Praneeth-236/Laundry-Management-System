@@ -124,25 +124,29 @@ The server limits size, checks extension/MIME/signature, generates its own filen
 
 `express-rate-limit` delegates counting to a custom MongoDB store. Each IP gets one fixed-window counter document. Atomic `$inc` updates prevent concurrent requests from overwriting each other's counts, and a unique document ID plus retries handle concurrent first requests and expired-window resets. The API checks the counter's reset time itself; a MongoDB TTL index eventually removes old counters. CI tests two independent store instances against the same replica set. This shares state, but authentication still depends on MongoDB availability and should be monitored.
 
-**27. What is still missing before production?**
+**27. How does email-based password recovery work?**
 
-The current unit and API integration suites run in CI, including upload boundaries, concurrency, and the shared rate-limit store. Users can export their account data and permanently delete their account after password confirmation; deletion removes owned records and all account sessions in a MongoDB transaction, then deletes stored photos. Account recovery, time-zone support, private photo storage/retention, migrations, backup/restore, monitoring, and a deployment/security review remain before real users.
+The account must have a verified email address. The server generates a random token, stores its SHA-256 digest with a 30-minute expiry, and sends the raw token in a URL fragment. The browser posts that token back; the server hashes it and atomically consumes the matching unexpired record. It hashes the new password with bcrypt and removes the account's existing server-side sessions in a MongoDB transaction. The reset request always returns the same status and message so callers are not directly told whether an address is registered. SMTP is optional for local development and must be configured for verification and recovery emails to work.
+
+**28. What is still missing before production?**
+
+The current unit and API integration suites run in CI, including upload boundaries, concurrency, shared rate limits, and recovery tokens. Users can export their account data and permanently delete their account after password confirmation; deletion removes owned records and all account sessions in a MongoDB transaction, then deletes stored photos. Time-zone support, private photo storage/retention, migrations, backup/restore, monitoring, privacy/retention terms, and a deployment/security review remain before real users.
 
 ### Project history and tradeoffs
 
-**28. Why move from C/Flask to MERN?**
+**29. Why move from C/Flask to MERN?**
 
 The C CLI was the original learning prototype. Flask wrapped it as a subprocess with flat-file persistence. I chose MERN for the active rebuild because I wanted to learn modern browser, API, session, and MongoDB transaction patterns and explain a single coherent web stack.
 
-**29. Is the C program still part of the production web path?**
+**30. Is the C program still part of the production web path?**
 
 No. It is preserved as a historical standalone prototype under `legacy/c-prototype/`. The MERN app does not invoke it.
 
-**30. Why are uploads on local disk?**
+**31. Why are uploads on local disk?**
 
 It is simple for local development and a single server. It does not suit multiple ephemeral app instances; object storage is a release requirement before scaling.
 
-**31. How would you scale a hostel version?**
+**32. How would you scale a hostel version?**
 
 Add hostel/workspace membership, machine and reservation models, conflict-safe queue rules, private object storage, managed MongoDB, and observability. Then test concurrency and fairness explicitly.
 

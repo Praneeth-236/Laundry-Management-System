@@ -7,7 +7,7 @@ function AuthCard({ mode }) {
   const isSignup = mode === "signup";
   const { user, isLoading, signIn, signUp } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({ username: "", password: "", email: "" });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   if (!isLoading && user) return <Navigate to="/dashboard" replace />;
@@ -17,7 +17,7 @@ function AuthCard({ mode }) {
     setSaving(true);
     setError("");
     try {
-      await (isSignup ? signUp(form) : signIn(form));
+      await (isSignup ? signUp(form) : signIn({ username: form.username, password: form.password }));
       navigate("/dashboard");
     } catch (requestError) {
       setError(requestError.message);
@@ -32,9 +32,11 @@ function AuthCard({ mode }) {
         <Feedback error={error} />
         <form onSubmit={submit} className="form-stack">
           <label>Username<input autoComplete="username" minLength="3" maxLength="20" pattern="[A-Za-z0-9_]+" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} required /></label>
+          {isSignup && <label>Recovery email<input type="email" autoComplete="email" maxLength="254" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /><small>Use an address you can access to verify your account and recover your password.</small></label>}
           <label>Password<input type="password" autoComplete={isSignup ? "new-password" : "current-password"} minLength={isSignup ? "12" : undefined} maxLength="72" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />{isSignup && <small>Use 12–72 characters. A memorable passphrase works well.</small>}</label>
           <button className="button button-primary button-wide" disabled={saving}>{saving ? "Please wait…" : isSignup ? "Create my account" : "Sign in"}<span>↗</span></button>
         </form>
+        {!isSignup && <p className="auth-switch"><Link to="/forgot-password">Forgot your password?</Link></p>}
         <p className="auth-switch">{isSignup ? "Already have a space?" : "New to Washday?"} <Link to={isSignup ? "/login" : "/signup"}>{isSignup ? "Sign in" : "Create an account"}</Link></p>
       </section>
       <p className="auth-footnote">A calmer laundry routine starts here.</p>

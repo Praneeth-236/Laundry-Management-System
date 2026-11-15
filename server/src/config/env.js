@@ -18,13 +18,30 @@ const envSchema = z.object({
   S3_BUCKET: z.string().min(1).optional(),
   S3_ACCESS_KEY_ID: z.string().min(1).optional(),
   S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
+  SMTP_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(),
+  SMTP_FROM: z.string().email().optional(),
+  PUBLIC_APP_URL: z.string().url().default("http://localhost:5173"),
 }).superRefine((config, context) => {
-  if (config.PHOTO_STORAGE_DRIVER !== "s3") return;
-  for (const key of ["S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) {
-    if (!config[key]) context.addIssue({ code: "custom", path: [key], message: `${key} is required when PHOTO_STORAGE_DRIVER=s3.` });
+  if (config.PHOTO_STORAGE_DRIVER === "s3") {
+    for (const key of ["S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) {
+      if (!config[key]) context.addIssue({ code: "custom", path: [key], message: `${key} is required when PHOTO_STORAGE_DRIVER=s3.` });
+    }
+    if (config.NODE_ENV === "production" && config.S3_ENDPOINT && new URL(config.S3_ENDPOINT).protocol !== "https:") {
+      context.addIssue({ code: "custom", path: ["S3_ENDPOINT"], message: "S3_ENDPOINT must use HTTPS in production." });
+    }
   }
-  if (config.NODE_ENV === "production" && config.S3_ENDPOINT && new URL(config.S3_ENDPOINT).protocol !== "https:") {
-    context.addIssue({ code: "custom", path: ["S3_ENDPOINT"], message: "S3_ENDPOINT must use HTTPS in production." });
+  if (config.SMTP_HOST && !config.SMTP_FROM) {
+    context.addIssue({ code: "custom", path: ["SMTP_FROM"], message: "SMTP_FROM is required when SMTP_HOST is configured." });
+  }
+  if (Boolean(config.SMTP_USER) !== Boolean(config.SMTP_PASSWORD)) {
+    context.addIssue({ code: "custom", path: ["SMTP_USER"], message: "SMTP_USER and SMTP_PASSWORD must be configured together." });
+  }
+  if (config.NODE_ENV === "production" && new URL(config.PUBLIC_APP_URL).protocol !== "https:") {
+    context.addIssue({ code: "custom", path: ["PUBLIC_APP_URL"], message: "PUBLIC_APP_URL must use HTTPS in production." });
   }
 });
 

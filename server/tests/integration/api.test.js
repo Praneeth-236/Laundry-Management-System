@@ -56,6 +56,7 @@ async function register(client, username) {
   const result = await call(client, "POST", "/auth/register", {
     username,
     password: "washday-passphrase-2026",
+    email: `${username}@example.test`,
   });
   assert.equal(result.response.status, 201);
   assert.notEqual(client.cookie, beforeRotation, "registration should rotate the session cookie");
@@ -112,6 +113,27 @@ test("registration requires CSRF and rotates the session", async () => {
   assert.equal(current.data.user.id, residentUser.id);
 
   await register(neighbor, neighborName);
+});
+
+test("recovery email changes require the password and verification depends on SMTP", async () => {
+  const email = `recovery_${randomUUID().slice(0, 8)}@example.test`;
+  const denied = await call(resident, "PATCH", "/profile/email", { email, currentPassword: "wrong-password" });
+  assert.equal(denied.response.status, 400);
+  const changed = await call(resident, "PATCH", "/profile/email", {
+    email,
+    currentPassword: "washday-passphrase-2026",
+  });
+  assert.equal(changed.response.status, 200);
+  assert.equal(changed.data.user.email, email);
+  assert.equal(changed.data.user.emailVerified, false);
+
+  const current = await call(resident, "GET", "/auth/me");
+  assert.equal(current.data.user.email, email);
+  const resend = await call(resident, "POST", "/auth/email/verification/request", {});
+  assert.equal(resend.response.status, 503);
+  assert.equal(resend.data.error.code, "EMAIL_NOT_CONFIGURED");
+  const malformed = await call(resident, "POST", "/auth/email/verification/confirm", { token: "invalid" });
+  assert.equal(malformed.response.status, 400);
 });
 
 test("clothing routes require login and keep inventory owner-scoped", async () => {

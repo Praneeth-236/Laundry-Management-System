@@ -8,11 +8,12 @@ Washday helps hostel residents and people in shared homes keep track of their cl
 
 The demo uses free hosting and is for fictional data only. It can sleep when idle, and its local-disk photo storage can lose uploads after a restart. See [deployment limits and private storage setup](docs/DEPLOYMENT.md).
 
-> **Learning project status:** the active application uses React, Express, Node.js, and MongoDB. The repo also preserves the earlier C and Flask prototypes under `legacy/`. Unit and API integration tests run in CI. Signed-in users can export their data and delete their account. This is not ready for real residents: migration rehearsal, backup/restore, monitoring, production photo-storage configuration, account recovery, and an operational/security review are still outstanding.
+> **Learning project status:** the active application uses React, Express, Node.js, and MongoDB. The repo also preserves the earlier C and Flask prototypes under `legacy/`. Unit and API integration tests run in CI. Signed-in users can verify a recovery email, reset a password when SMTP is configured, export their data, and delete their account. This is not ready for real residents: migration rehearsal, backup/restore, monitoring, production photo-storage and SMTP configuration, retention terms, and an operational/security review are still outstanding.
 
 ## What you can do
 
 - Create an account and manage a private clothing inventory.
+- Verify a recovery email and reset a forgotten password when SMTP delivery is configured.
 - Search and categorize clothing, including custom categories.
 - Upload private clothing photos.
 - Choose your laundry days.

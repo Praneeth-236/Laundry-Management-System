@@ -21,8 +21,14 @@ The API is JSON under `/api`. During development, Vite proxies this prefix to Ex
 | POST | `/api/auth/register` | No | Create an account and sign it in |
 | POST | `/api/auth/login` | No | Verify credentials and rotate the session ID |
 | POST | `/api/auth/logout` | No | Destroy the session and clear its cookie |
+| POST | `/api/auth/email/verification/request` | Yes | Send a verification link for the signed-in account |
+| POST | `/api/auth/email/verification/confirm` | No | Verify an email with `{ "token": "..." }` |
+| POST | `/api/auth/password-reset/request` | No | Send a reset link for a verified email |
+| POST | `/api/auth/password-reset/complete` | No | Set a new password with the one-time token |
 
-Register and login accept `{ "username": "sam_1", "password": "a long passphrase" }`. Usernames are 3-20 letters, numbers, or underscores. Passwords are 12-72 characters and no more than 72 UTF-8 bytes for bcrypt compatibility. Repeated attempts are rate limited by IP.
+Register accepts `{ "username": "sam_1", "email": "sam@example.test", "password": "a long passphrase" }`; login accepts `{ "username": "sam_1", "password": "a long passphrase" }`. Usernames are 3-20 letters, numbers, or underscores. Email is trimmed and normalized to lowercase. Passwords are 12-72 characters and no more than 72 UTF-8 bytes for bcrypt compatibility. Authentication and recovery attempts are rate limited by IP. Password reset gives the same response for known and unknown addresses.
+
+Email verification and password reset require SMTP settings. Without SMTP, account registration and normal laundry use still work, but verification and password recovery return `503 EMAIL_NOT_CONFIGURED`. Configure `SMTP_HOST`, `SMTP_FROM`, and `PUBLIC_APP_URL`; authenticated SMTP providers also need `SMTP_USER` and `SMTP_PASSWORD`. Verification and reset tokens are one-time, expire after 30 minutes, and are stored only as SHA-256 hashes. The emailed links carry the token in the URL fragment so it is not sent in the HTTP request.
 
 Example current-user response:
 
@@ -31,6 +37,8 @@ Example current-user response:
   "user": {
     "id": "6655ab...",
     "username": "sam_1",
+    "email": "sam@example.test",
+    "emailVerified": false,
     "laundryDays": ["Monday", "Thursday"],
     "categories": []
   }
@@ -86,6 +94,7 @@ All profile routes require login.
 | --- | --- | --- |
 | PATCH | `/api/profile/schedule` | Replace allowed days with `{ "laundryDays": ["Monday", "Thursday"] }` |
 | PATCH | `/api/profile/password` | Change password with `currentPassword`, `newPassword`, `confirmPassword` |
+| PATCH | `/api/profile/email` | Set a recovery email with `email` and `currentPassword`; verification is separate |
 | GET | `/api/profile/export` | Download account, clothing, and laundry history as private JSON |
 | DELETE | `/api/profile/account` | Permanently delete account data and photos after confirming `currentPassword` |
 
