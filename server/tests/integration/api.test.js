@@ -178,6 +178,45 @@ test("photo uploads reject spoofed, unsupported, oversized, and overfilled multi
   assert.equal(excessive.data.error.code, "INVALID_UPLOAD");
 });
 
+test("MongoDB rate-limit stores share atomic counters across instances", async () => {
+  const { MongoRateLimitStore } = await import("../../src/middleware/mongoRateLimitStore.js");
+  const prefix = `integration.${randomUUID()}:`;
+  const separatePrefix = `${prefix}other:`;
+  const first = new MongoRateLimitStore({ prefix });
+  const second = new MongoRateLimitStore({ prefix });
+  const separate = new MongoRateLimitStore({ prefix: separatePrefix });
+  await Promise.all([first.init({ windowMs: 60_000 }), second.init({ windowMs: 60_000 })]);
+  await separate.init({ windowMs: 60_000 });
+
+  const increments = await Promise.all(Array.from({ length: 20 }, (_, index) =>
+    (index % 2 === 0 ? first : second).increment("127.0.0.1")));
+  assert.deepEqual(increments.map(({ totalHits }) => totalHits).sort((a, b) => a - b), Array.from({ length: 20 }, (_, index) => index + 1));
+  assert.equal((await second.get("127.0.0.1")).totalHits, 20);
+
+  await first.decrement("127.0.0.1");
+  assert.equal((await second.get("127.0.0.1")).totalHits, 19);
+  await second.resetKey("127.0.0.1");
+  assert.equal(await first.get("127.0.0.1"), undefined);
+
+  await first.increment("one");
+  await second.increment("two");
+  await separate.increment("keep");
+  await first.resetAll();
+  assert.equal(await second.get("one"), undefined);
+  assert.equal(await second.get("two"), undefined);
+  assert.equal((await separate.get("keep")).totalHits, 1);
+  await separate.resetAll();
+
+  const expiring = new MongoRateLimitStore({ prefix: `${prefix}expiry:` });
+  await expiring.init({ windowMs: 50 });
+  const firstWindow = await expiring.increment("client");
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  const nextWindow = await expiring.increment("client");
+  assert.equal(nextWindow.totalHits, 1);
+  assert.ok(nextWindow.resetTime > firstWindow.resetTime);
+  await expiring.resetAll();
+});
+
 test("laundry cycles update item status and history as one workflow", async () => {
   const currentDay = new Intl.DateTimeFormat("en", { weekday: "long" }).format(new Date());
   const schedule = await call(resident, "PATCH", "/profile/schedule", { laundryDays: [currentDay] });

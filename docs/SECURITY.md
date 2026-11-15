@@ -11,7 +11,7 @@ This file describes what the code currently does and the work that remains. It i
 - Successful sign-in regenerates the session ID.
 - The browser receives the session ID in an HTTP-only, SameSite=Lax cookie. The cookie is Secure when `NODE_ENV=production`.
 - Session contents are stored in MongoDB, not the Express in-memory store.
-- Login and registration share an IP-based rate limit.
+- Login and registration share an IP-based rate limit stored in MongoDB, so counters are shared between API processes. Expired counter documents are removed by a MongoDB TTL index.
 - Login failure text does not say whether the username or password was wrong.
 
 ### Request and data protection
@@ -41,7 +41,7 @@ This file describes what the code currently does and the work that remains. It i
 ## Known gaps
 
 - Automated unit tests cover input validation, CSRF checks, and authentication middleware. API integration tests cover registration/session rotation, ownership isolation, private-photo cleanup, upload MIME/signature/size/multipart limits, account export/deletion, a laundry cycle, and concurrent requests for the same item; CI runs them against a disposable replica set.
-- The built-in rate-limit store is in process memory. Use a shared store before running multiple API instances.
+- Rate-limit counters share the application MongoDB deployment. Keep the `rate_limits` collection on the same protected database and monitor its availability along with authentication.
 - Account export and password-confirmed account deletion are implemented. Deletion revokes all sessions. Recovery, email verification, MFA, and an account deletion retention/audit policy are not implemented.
 - Archiving a clothing item removes its stored photo; its laundry history remains. There is no scheduled orphan-file sweep, general retention policy, or object-storage deletion workflow yet.
 - No malware scanning, object-storage policy, structured audit log, monitoring alert, or incident-response process is configured.

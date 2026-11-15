@@ -10,6 +10,10 @@ export async function connectDatabase() {
   // Build model indexes before accepting requests so uniqueness and active-cycle
   // constraints are enforced by MongoDB, not just by application code.
   await Promise.all([User.createIndexes(), ClothingItem.createIndexes(), LaundryEvent.createIndexes()]);
+  await mongoose.connection.collection("rate_limits").createIndex(
+    { resetAt: 1 },
+    { expireAfterSeconds: 0, name: "rate_limit_expiry" },
+  );
   console.info(`MongoDB connected: ${mongoose.connection.name}`);
 }
 
