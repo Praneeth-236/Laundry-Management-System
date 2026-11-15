@@ -8,6 +8,7 @@ loadDotEnv({ path: resolve(projectRoot, ".env") });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  DEPLOYMENT_MODE: z.enum(["demo", "production"]).default("demo"),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   MONGODB_URI: z.string().min(1).default("mongodb://127.0.0.1:27017/laundry?replicaSet=rs0"),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters."),
@@ -42,6 +43,21 @@ const envSchema = z.object({
   }
   if (config.NODE_ENV === "production" && new URL(config.PUBLIC_APP_URL).protocol !== "https:") {
     context.addIssue({ code: "custom", path: ["PUBLIC_APP_URL"], message: "PUBLIC_APP_URL must use HTTPS in production." });
+  }
+  if (config.DEPLOYMENT_MODE === "production") {
+    if (config.NODE_ENV !== "production") {
+      context.addIssue({ code: "custom", path: ["NODE_ENV"], message: "NODE_ENV must be production when DEPLOYMENT_MODE=production." });
+    }
+    if (config.PHOTO_STORAGE_DRIVER !== "s3") {
+      context.addIssue({ code: "custom", path: ["PHOTO_STORAGE_DRIVER"], message: "Production deployment requires private S3-compatible photo storage." });
+    }
+    if (!config.SMTP_HOST || !config.SMTP_FROM) {
+      context.addIssue({ code: "custom", path: ["SMTP_HOST"], message: "SMTP_HOST and SMTP_FROM are required when DEPLOYMENT_MODE=production." });
+    }
+    const usesTls = config.MONGODB_URI.startsWith("mongodb+srv://") || /[?&](?:tls|ssl)=true(?:&|$)/i.test(config.MONGODB_URI);
+    if (!usesTls) {
+      context.addIssue({ code: "custom", path: ["MONGODB_URI"], message: "MongoDB URI must enable TLS when DEPLOYMENT_MODE=production." });
+    }
   }
 });
 

@@ -9,6 +9,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DEPLOYMENT_MODE
+        value: demo
       - key: SESSION_SECRET
         generateValue: true
       - key: MONGODB_URI

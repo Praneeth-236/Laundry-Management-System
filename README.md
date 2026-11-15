@@ -8,6 +8,8 @@ Washday helps hostel residents and people in shared homes keep track of their cl
 
 The demo uses free hosting and is for fictional data only. It can sleep when idle, and its local-disk photo storage can lose uploads after a restart. See [deployment limits and private storage setup](docs/DEPLOYMENT.md).
 
+The Render blueprint explicitly uses `DEPLOYMENT_MODE=demo`. A real deployment must set `DEPLOYMENT_MODE=production`; startup then rejects local photo storage, missing SMTP, non-TLS MongoDB URIs, and non-HTTPS application URLs.
+
 > **Learning project status:** the active application uses React, Express, Node.js, and MongoDB. The repo also preserves the earlier C and Flask prototypes under `legacy/`. Unit and API integration tests run in CI. Signed-in users can verify a recovery email, reset a password when SMTP is configured, export their data, and delete their account. This is not ready for real residents: migration rehearsal, backup/restore, monitoring, production photo-storage and SMTP configuration, retention terms, and an operational/security review are still outstanding.
 
 ## What you can do

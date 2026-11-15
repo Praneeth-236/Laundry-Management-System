@@ -39,6 +39,7 @@ This file describes what the code currently does and the work that remains. It i
 ## Operational assumptions
 
 - Production traffic must use HTTPS. Set `NODE_ENV=production` behind a correctly configured trusted proxy so Secure cookies work.
+- `DEPLOYMENT_MODE=production` adds startup checks for HTTPS app URLs, TLS MongoDB, configured SMTP delivery, and private S3-compatible photo storage. The free portfolio instance deliberately sets `DEPLOYMENT_MODE=demo`; it must not be treated as a production configuration.
 - MongoDB must require authentication and TLS in any deployed environment. The local Compose database binds only to loopback and is for development.
 - `SESSION_SECRET` must be a long random secret held in the hosting platform's secret manager.
 - Local photo storage needs a persistent volume on a single server. For multiple instances or ephemeral hosts, configure the private S3-compatible backend with bucket-scoped credentials. The application never serves bucket URLs directly.
