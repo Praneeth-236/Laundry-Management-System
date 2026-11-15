@@ -11,7 +11,13 @@ import { HttpError } from "../utils/httpError.js";
 export const clothingRoutes = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 1,
+    fields: 2,
+    parts: 3,
+    fieldSize: 8 * 1024,
+  },
   fileFilter(_req, file, callback) {
     if (!file.mimetype.startsWith("image/")) {
       return callback(new HttpError(400, "Upload an image file.", "INVALID_IMAGE"));

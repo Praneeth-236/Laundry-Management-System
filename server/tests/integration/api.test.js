@@ -144,6 +144,40 @@ test("archiving a clothing item removes its private photo", async () => {
   assert.equal(photo.response.status, 404);
 });
 
+test("photo uploads reject spoofed, unsupported, oversized, and overfilled multipart requests", async () => {
+  const invalidSignature = new FormData();
+  invalidSignature.set("name", "Spoofed image");
+  invalidSignature.set("category", "Shirt");
+  invalidSignature.set("photo", new Blob(["not an image"], { type: "image/png" }), "spoof.png");
+  const spoofed = await call(resident, "POST", "/clothes", invalidSignature);
+  assert.equal(spoofed.response.status, 400);
+  assert.equal(spoofed.data.error.code, "INVALID_IMAGE");
+
+  const unsupportedMime = new FormData();
+  unsupportedMime.set("name", "Unsupported media");
+  unsupportedMime.set("category", "Shirt");
+  unsupportedMime.set("photo", new Blob(["plain text"], { type: "text/plain" }), "notes.txt");
+  const unsupported = await call(resident, "POST", "/clothes", unsupportedMime);
+  assert.equal(unsupported.response.status, 400);
+  assert.equal(unsupported.data.error.code, "INVALID_IMAGE");
+
+  const oversized = new FormData();
+  oversized.set("name", "Oversized image");
+  oversized.set("category", "Shirt");
+  oversized.set("photo", new Blob([new Uint8Array(5 * 1024 * 1024 + 1)], { type: "image/png" }), "large.png");
+  const tooLarge = await call(resident, "POST", "/clothes", oversized);
+  assert.equal(tooLarge.response.status, 413);
+  assert.equal(tooLarge.data.error.code, "FILE_TOO_LARGE");
+
+  const tooManyFields = new FormData();
+  tooManyFields.set("name", "Extra multipart fields");
+  tooManyFields.set("category", "Shirt");
+  tooManyFields.set("unexpected", "unbounded field");
+  const excessive = await call(resident, "POST", "/clothes", tooManyFields);
+  assert.equal(excessive.response.status, 400);
+  assert.equal(excessive.data.error.code, "INVALID_UPLOAD");
+});
+
 test("laundry cycles update item status and history as one workflow", async () => {
   const currentDay = new Intl.DateTimeFormat("en", { weekday: "long" }).format(new Date());
   const schedule = await call(resident, "PATCH", "/profile/schedule", { laundryDays: [currentDay] });

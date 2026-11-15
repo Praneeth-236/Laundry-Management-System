@@ -60,8 +60,14 @@ export function createApp() {
   }
 
   app.use((error, _req, res, _next) => {
-    if (error?.name === "MulterError" && error.code === "LIMIT_FILE_SIZE") {
-      return res.status(413).json({ error: { code: "FILE_TOO_LARGE", message: "Images must be 5 MB or smaller." } });
+    if (error?.name === "MulterError") {
+      const tooLarge = error.code === "LIMIT_FILE_SIZE";
+      return res.status(tooLarge ? 413 : 400).json({
+        error: {
+          code: tooLarge ? "FILE_TOO_LARGE" : "INVALID_UPLOAD",
+          message: tooLarge ? "Images must be 5 MB or smaller." : "The upload contains too many or invalid fields.",
+        },
+      });
     }
     if (error?.name === "ValidationError" || error?.name === "CastError") {
       return res.status(400).json({ error: { code: "INVALID_INPUT", message: "The submitted data is invalid." } });
