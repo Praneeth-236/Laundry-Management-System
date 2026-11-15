@@ -48,7 +48,7 @@ All clothing routes require login.
 | GET | `/api/clothes/:itemId/photo` | Stream the private photo after checking ownership |
 | POST | `/api/clothes/:itemId/missing` | Mark an available item missing |
 | POST | `/api/clothes/:itemId/found` | Mark a missing item found |
-| DELETE | `/api/clothes/:itemId` | Archive an item; laundry history remains |
+| DELETE | `/api/clothes/:itemId` | Archive an item, remove its photo, and retain laundry history |
 
 `GET /api/clothes` accepts optional `search` and exact `category` query parameters. Its response includes `{ items, categories }`. Clothing creation fields are `name`, `category`, and optional image file field `photo`. The file limit is 5 MB; accepted formats are PNG, JPEG, GIF, and WebP.
 

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
-import { rm } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -123,6 +123,25 @@ test("clothing routes require login and keep inventory owner-scoped", async () =
   assert.equal(neighborItems.data.items.length, 0);
   const crossAccountMutation = await call(neighbor, "POST", `/clothes/${itemId}/missing`, {});
   assert.equal(crossAccountMutation.response.status, 409);
+});
+
+test("archiving a clothing item removes its private photo", async () => {
+  const form = new FormData();
+  form.set("name", "Archive photo test");
+  form.set("category", "Shirt");
+  form.set("photo", new Blob([Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], { type: "image/png" }), "shirt.png");
+  const created = await call(resident, "POST", "/clothes", form);
+  assert.equal(created.response.status, 201);
+  const photoKey = created.data.item.photoKey;
+  assert.ok(photoKey);
+  await readFile(join(process.env.UPLOAD_DIR, photoKey));
+
+  const archived = await call(resident, "DELETE", `/clothes/${created.data.item._id}`);
+  assert.equal(archived.response.status, 200);
+  assert.equal(archived.data.item.photoKey, null);
+  await assert.rejects(readFile(join(process.env.UPLOAD_DIR, photoKey)), { code: "ENOENT" });
+  const photo = await call(resident, "GET", `/clothes/${created.data.item._id}/photo`);
+  assert.equal(photo.response.status, 404);
 });
 
 test("laundry cycles update item status and history as one workflow", async () => {
