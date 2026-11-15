@@ -1,8 +1,10 @@
 # Washday | Hostel Laundry Companion
 
+[![CI](https://github.com/Praneeth-236/Laundry-Management-System/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Praneeth-236/Laundry-Management-System/actions/workflows/ci.yml)
+
 Washday helps hostel residents and people in shared homes keep track of their clothes, laundry days, and items still out for a wash. It is a full-stack MERN learning project built around one real workflow: know what you own, send available pieces to laundry, and record what came back.
 
-> **Learning project status:** the active application uses React, Express, Node.js, and MongoDB. The repo also preserves the earlier C and Flask prototypes under `legacy/`. Unit and API integration tests plus CI are configured; the database-backed suite still needs its first remote CI run. This is not ready for real residents: migration rehearsal, backup/restore, monitoring, persistent photo storage, and account recovery are still outstanding.
+> **Learning project status:** the active application uses React, Express, Node.js, and MongoDB. The repo also preserves the earlier C and Flask prototypes under `legacy/`. Unit and API integration tests pass in CI. This is not ready for real residents: migration rehearsal, backup/restore, monitoring, persistent photo storage, and account recovery are still outstanding.
 
 ## What you can do
 
@@ -110,6 +112,12 @@ Start with the guided path in [Learning Guide](docs/LEARNING_GUIDE.md). It follo
 - [Interview preparation](docs/INTERVIEW_PREP.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Free demo deployment notes](docs/DEPLOYMENT.md)
+
+## Try a free demo deployment
+
+The free demo runs on Render with MongoDB Atlas. It is intended for fictional portfolio data, not real resident data; see [deployment limits and setup](docs/DEPLOYMENT.md) first.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2FPraneeth-236%2FLaundry-Management-System%2Ftree%2Fcodex%2Fproduction-readiness)
 
 ## Why MERN, and where the C program went
 

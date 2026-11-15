@@ -19,10 +19,10 @@ This is a $0 demo configuration while both accounts remain on their free tiers. 
 
 ## Deploy on Render
 
-1. Push the reviewed repository branch to GitHub and connect that repository in Render.
-2. Choose **Blueprint** and select the repository so Render reads `render.yaml`. The blueprint creates a free Docker web service named `washday-demo`.
+1. Open the **Deploy to Render** button in the repository README. It selects the reviewed `codex/production-readiness` branch; Render reads `render.yaml` and prepares a free Docker web service named `washday-demo`.
+2. Review the service settings and confirm the free plan. Automatic deploys are off in the Blueprint; later code changes won't silently redeploy the demo.
 3. Enter the Atlas URI for the `MONGODB_URI` environment variable. Render generates `SESSION_SECRET` from the blueprint.
-4. Deploy and wait for `/api/health` to report `status: ok` and `database: connected`.
+4. Review the resources and click **Apply** (or **Deploy Blueprint**). Wait for `/api/health` to report `status: ok` and `database: connected`.
 5. Open the Render URL, create a fictional demo account, and walk through add item → send to laundry → mark returned.
 
 The free instance's file system is temporary. The blueprint stores uploads under `/tmp/washday-uploads`, so uploaded images can vanish across restarts. Treat this as a known demo limitation. Before using photos with real users, replace local disk storage with private object storage, configure retention/deletion, and test restore behavior.
