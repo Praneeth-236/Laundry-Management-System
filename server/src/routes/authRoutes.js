@@ -3,10 +3,12 @@ import { rateLimit } from "express-rate-limit";
 import { asyncRoute } from "../middleware/asyncRoute.js";
 import { issueCsrfToken } from "../middleware/csrf.js";
 import { currentUser, login, logout, register } from "../controllers/authController.js";
+import { MongoRateLimitStore } from "../middleware/mongoRateLimitStore.js";
 
 export const authRoutes = Router();
 
 const signInLimiter = rateLimit({
+  store: new MongoRateLimitStore({ prefix: "washday:auth:" }),
   windowMs: 15 * 60 * 1000,
   limit: 10,
   standardHeaders: "draft-8",

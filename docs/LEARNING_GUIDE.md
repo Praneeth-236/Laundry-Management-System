@@ -13,10 +13,13 @@ flowchart LR
     Models --> Mongo[(MongoDB replica set)]
     Express --> SessionStore[connect-mongo]
     SessionStore --> Mongo
+    Express -->|private photo stream| ObjectStore[(Optional S3-compatible bucket)]
     Vite[Vite dev server] -->|forwards /api| Express
 ```
 
 In development, Vite serves React on port `5173` and forwards `/api` to Express on port `4000`. In a built deployment, Express serves `client/dist` and the API from the same origin. MongoDB holds application records and server-side login sessions.
+
+Photo bytes use local disk by default. Setting `PHOTO_STORAGE_DRIVER=s3` switches the server to a private S3-compatible bucket; MongoDB stores only the generated object key. The browser never receives a public bucket URL: an authenticated request loads the item under the signed-in owner's ID, then the server streams the object with private cache headers.
 
 ## Learn it in this order
 
@@ -95,7 +98,11 @@ Read `AuthPages.jsx`, `AuthContext.jsx`, `api.js`, `csrf.js`, `authRoutes.js`, a
 - `bcryptjs` hashes passwords with a work factor. The original password is not stored.
 - On a successful login, `req.session.regenerate` rotates the session ID, which reduces session-fixation risk.
 - Sessions are stored in MongoDB through `connect-mongo`, not Express's in-memory development store.
-- The login and registration endpoints have an IP-based rate limit.
+- Login and registration share an IP-based limit backed by `MongoRateLimitStore`, not a per-process memory counter.
+
+`server/src/middleware/mongoRateLimitStore.js` implements the `express-rate-limit` store interface. Each client key maps to one MongoDB document containing the hit count and reset time. The document ID uses an HMAC digest keyed by `SESSION_SECRET`, so raw IP values are not stored. The store increments active counters with one atomic update, so separate API instances see the same count. When requests initialize or reset a counter at once, the unique `_id` and bounded retry path resolve the race. Expiration checks use `resetAt`; the TTL index created in `database.js` removes old documents later as storage cleanup. MongoDB's TTL monitor is asynchronous, so it does not decide whether a request is over its limit.
+
+The integration test creates two independent stores with the same prefix, sends concurrent increments, and checks shared counts, decrement/reset behavior, prefix isolation, and a new window after expiry.
 
 The password limit is 72 UTF-8 bytes because bcrypt uses that input limit. The client gives the same guidance. Password hashes are selected explicitly only for sign-in and password change, then are never included in the user JSON response.
 
@@ -131,13 +138,13 @@ Transactions require a MongoDB replica set. Docker Compose starts a local single
 
 ### 9. Learn photo uploads
 
-The closet form sends `multipart/form-data`. Multer keeps one image in memory and limits it to 5 MB. The controller checks extension, declared MIME type, and file signature before saving it under a random server-generated name. The original filename is never used as a path.
+The closet form sends `multipart/form-data`. Multer keeps one image in memory and limits it to 5 MB. The controller checks extension, declared MIME type, and file signature before saving it under a random server-generated name. The original filename is never used as a path. `server/src/services/photoStorageAdapter.js` isolates local files from S3-compatible object storage; `PHOTO_STORAGE_DRIVER` selects which implementation is used.
 
-Photos are outside the public static directory. `GET /api/clothes/:itemId/photo` first checks ownership, then sends the private file with `Cache-Control: private, no-store`. Local disk is simple for learning, but a multi-instance production app should use private object storage and a retention/deletion policy.
+Photos are outside the public static directory. `GET /api/clothes/:itemId/photo` first checks ownership, then streams the private object with `Cache-Control: private, no-store`. A shared rate limit caps photo uploads at 30 per account per 24-hour window to control storage abuse. Local disk is simple for learning; a multi-instance or ephemeral production host should use a private bucket and a retention/deletion policy. The bucket must not allow public access, and the server uses only bucket-scoped credentials.
 
 ### 10. Know what still needs work
 
-Before calling this production-ready, add an automated unit/integration suite, run it in CI, rehearse database and legacy-data migrations, document backup/restore, and deploy to a persistent host. Shared laundry-machine booking, time zones, reminders, account recovery, and object storage are future product work. See [Roadmap](ROADMAP.md) and [Security](SECURITY.md).
+Before calling this production-ready, rehearse database and legacy-data migrations, document backup/restore, configure persistent storage, and deploy to an appropriate host. Shared laundry-machine booking, time zones, reminders, account recovery, and operational response are future work. See [Roadmap](ROADMAP.md), [Security](SECURITY.md), and the [deployment guide](DEPLOYMENT.md).
 
 ## Folder map
 
@@ -155,7 +162,9 @@ Before calling this production-ready, add an automated unit/integration suite, r
 | `server/src/config/` | Environment validation and MongoDB connection |
 | `server/src/routes/` | HTTP method/path to controller mapping |
 | `server/src/controllers/` | Auth, clothing, laundry, profile, and health behavior |
+| `server/src/services/photoStorage*.js` | Stores, reads, and deletes photos on local disk or a private S3-compatible bucket |
 | `server/src/middleware/` | Authentication, CSRF, async error forwarding |
+| `server/src/middleware/requestContext.js` | Request IDs and structured logs that omit query strings and bodies |
 | `server/src/models/` | Mongoose schemas and database indexes |
 | `server/src/services/` | Small reusable domain helpers |
 | `server/src/utils/` | HTTP errors and transaction helper |
@@ -176,4 +185,4 @@ Answer keys and question prompts are in [Interview Preparation](INTERVIEW_PREP.m
 
 ## Automated checks
 
-`npm test` runs the fast unit suite. Read `server/tests/input-validation.test.js` to see validation edge cases and `server/tests/security-middleware.test.js` for CSRF and authentication middleware behavior. `npm run test:integration` exercises the real Express API with MongoDB, including session rotation, owner-scoped inventory, and a complete laundry return. It needs the local replica set from the setup steps and only writes to the isolated `laundry_test` database. GitHub Actions runs both suites against MongoDB before building the frontend.
+`npm test` runs the fast unit suite. Read `server/tests/input-validation.test.js` for validation cases, `server/tests/security-middleware.test.js` for CSRF/authentication behavior, and `server/tests/photo-storage.test.js` for the local and S3-compatible adapters. `npm run test:integration` exercises the real Express API with MongoDB, including session rotation, owner-scoped inventory and photo reads, photo cleanup, and a complete laundry return. It needs the local replica set from the setup steps and only writes to the isolated `laundry_test` database. GitHub Actions runs both suites against MongoDB before building the frontend.

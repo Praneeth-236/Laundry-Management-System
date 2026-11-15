@@ -15,11 +15,11 @@ Start with the day-to-day personal laundry workflow that works for a hostel resi
 
 ## Milestone 1: interview-quality engineering baseline
 
-- Expand automated coverage with upload validation, session lifecycle edge cases, and concurrent laundry state transitions; keep CI green as those cases are added.
+- Expand automated coverage with session lifecycle edge cases; CI checks upload validation and concurrent laundry state transitions against a replica set.
 - Add lint/format tooling and CI for install, tests, and production build.
 - Add database migration scripts and rehearse import from old text-file data on a copied sample.
 - Add a seed/demo-data command that only runs in development.
-- Add screenshots, a live demo, and a short architecture walkthrough recording.
+- Add polished screenshots and a short architecture walkthrough recording; a free-tier live demo is now available with fictional data only.
 
 ## Milestone 2: make one-hostel shared laundry useful
 
@@ -32,7 +32,7 @@ Start with the day-to-day personal laundry workflow that works for a hostel resi
 ## Milestone 3: deploy for real users
 
 - Add email verification, password recovery, account export/deletion, and documented privacy/retention rules.
-- Move photos to private object storage and rate limits to a shared store.
+- Configure private object storage in production and rehearse upload, read, archive, account deletion, and backup/restore behavior.
 - Add timezone-aware schedules and optional reminders.
 - Use managed MongoDB with backups, TLS, least-privilege credentials, monitoring, structured logs, and an incident response contact.
 - Run security review and recovery drills before a wider launch.
