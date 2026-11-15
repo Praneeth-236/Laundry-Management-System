@@ -205,6 +205,9 @@ test("MongoDB rate-limit stores share atomic counters across instances", async (
     (index % 2 === 0 ? first : second).increment("127.0.0.1")));
   assert.deepEqual(increments.map(({ totalHits }) => totalHits).sort((a, b) => a - b), Array.from({ length: 20 }, (_, index) => index + 1));
   assert.equal((await second.get("127.0.0.1")).totalHits, 20);
+  const storedCounter = await first.collection.findOne({ storePrefix: prefix });
+  assert.match(storedCounter._id.slice(prefix.length), /^[a-f\d]{64}$/);
+  assert.equal(storedCounter._id.includes("127.0.0.1"), false);
 
   await first.decrement("127.0.0.1");
   assert.equal((await second.get("127.0.0.1")).totalHits, 19);

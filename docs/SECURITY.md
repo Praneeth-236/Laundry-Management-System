@@ -11,7 +11,7 @@ This file describes what the code currently does and the work that remains. It i
 - Successful sign-in regenerates the session ID.
 - The browser receives the session ID in an HTTP-only, SameSite=Lax cookie. The cookie is Secure when `NODE_ENV=production`.
 - Session contents are stored in MongoDB, not the Express in-memory store.
-- Login and registration share an IP-based rate limit stored in MongoDB, so counters are shared between API processes. Expired counter documents are removed by a MongoDB TTL index.
+- Login and registration share an IP-based rate limit stored in MongoDB, so counters are shared between API processes. MongoDB stores a keyed HMAC digest of the rate-limit key rather than the raw IP. Expired counter documents are removed by a MongoDB TTL index.
 - Login failure text does not say whether the username or password was wrong.
 
 ### Request and data protection

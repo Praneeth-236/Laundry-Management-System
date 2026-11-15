@@ -1,4 +1,6 @@
+import { createHmac } from "node:crypto";
 import mongoose from "mongoose";
+import { env } from "../config/env.js";
 
 function unwrapDocument(result) {
   return result?.value ?? result;
@@ -10,6 +12,11 @@ export class MongoRateLimitStore {
     this.prefix = prefix;
     this.collectionName = collectionName;
     this.localKeys = false;
+  }
+
+  #documentId(key) {
+    const digest = createHmac("sha256", env.SESSION_SECRET).update(key).digest("hex");
+    return `${this.prefix}${digest}`;
   }
 
   get collection() {
@@ -27,7 +34,7 @@ export class MongoRateLimitStore {
 
   async increment(key) {
     if (!this.windowMs) throw new Error("The MongoDB rate-limit store has not been initialized.");
-    const id = `${this.prefix}${key}`;
+    const id = this.#documentId(key);
 
     // A bounded retry handles TTL cleanup racing an insert and requests that
     // initialize the same client's counter at the same time on different hosts.
@@ -62,21 +69,21 @@ export class MongoRateLimitStore {
   async decrement(key) {
     const now = new Date();
     await this.collection.updateOne(
-      { _id: `${this.prefix}${key}`, resetAt: { $gt: now }, totalHits: { $gt: 0 } },
+      { _id: this.#documentId(key), resetAt: { $gt: now }, totalHits: { $gt: 0 } },
       { $inc: { totalHits: -1 } },
     );
   }
 
   async get(key) {
     const record = await this.collection.findOne({
-      _id: `${this.prefix}${key}`,
+      _id: this.#documentId(key),
       resetAt: { $gt: new Date() },
     });
     return record ? { totalHits: record.totalHits, resetTime: record.resetAt } : undefined;
   }
 
   async resetKey(key) {
-    await this.collection.deleteOne({ _id: `${this.prefix}${key}` });
+    await this.collection.deleteOne({ _id: this.#documentId(key) });
   }
 
   async resetAll() {
